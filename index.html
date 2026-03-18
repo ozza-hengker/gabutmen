@@ -81,7 +81,7 @@
         <div class="w-full max-w-2xl flex gap-2 mb-10">
             <input type="text" id="search-input" placeholder="Ketik nama lagu atau penyanyi..." 
                 class="w-full bg-slate-800 border border-slate-700 text-white px-6 py-4 rounded-full focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 text-lg shadow-lg">
-            <button onclick="searchSongs()" id="search-btn" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center">
+            <button id="search-btn" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center cursor-pointer">
                 <i class="fas fa-search"></i>
             </button>
         </div>
@@ -105,7 +105,7 @@
 
     <!-- Halaman Karaoke (Player & Lirik) -->
     <main id="karaoke-page" class="w-full max-w-4xl px-4 hidden flex-col items-center transition-all duration-500">
-        <button onclick="closeKaraoke()" class="self-start mb-6 text-purple-400 hover:text-purple-300 flex items-center gap-2 transition-colors">
+        <button onclick="closeKaraoke()" class="self-start mb-6 text-purple-400 hover:text-purple-300 flex items-center gap-2 transition-colors cursor-pointer">
             <i class="fas fa-arrow-left"></i> Kembali ke Pencarian
         </button>
 
@@ -150,7 +150,7 @@
 
             <!-- Mic Sync Control -->
             <div class="w-full flex justify-center mb-6 border-b border-slate-700/50 pb-6">
-                <button id="mic-btn" onclick="toggleMic()" class="bg-slate-700 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-3 shadow-lg">
+                <button id="mic-btn" onclick="toggleMic()" class="bg-slate-700 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-3 shadow-lg cursor-pointer">
                     <i class="fas fa-microphone-slash" id="mic-icon"></i> 
                     <span id="mic-text">Aktifkan Mic (Sync Lirik & Efek Suara)</span>
                 </button>
@@ -175,10 +175,18 @@
     </main>
 
     <script>
-        // API Configuration (Gemini API untuk Lirik)
-        const apiKey = ""; // Kunci API akan disuntikkan secara otomatis oleh environment
+        console.log("Ozza Karaoke App Initialized!");
 
-        // DOM Elements
+        // ==========================================
+        // KONFIGURASI API
+        // ==========================================
+        // Jika web ini dihosting di GitHub Pages, fitur AI untuk memanggil lirik 
+        // membutuhkan API Key Gemini. Jika kamu punya API Key, masukkan di antara tanda kutip di bawah:
+        const apiKey = ""; 
+
+        // ==========================================
+        // DOM ELEMENTS
+        // ==========================================
         const searchInput = document.getElementById('search-input');
         const resultsGrid = document.getElementById('results-grid');
         const loadingIndicator = document.getElementById('loading');
@@ -210,25 +218,31 @@
         let currentLyricsArray = [];
         let searchTimeout = null;
 
+        // ==========================================
+        // EVENT LISTENERS
+        // ==========================================
+
         // Event Listener untuk Auto-Search (Otomatis cari saat berhenti ngetik)
-        searchInput.addEventListener('input', function (e) {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                if (searchInput.value.trim() !== '') {
+        if (searchInput) {
+            searchInput.addEventListener('input', function (e) {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    if (searchInput.value.trim() !== '') {
+                        searchSongs();
+                    }
+                }, 800);
+            });
+
+            // Event Listener untuk tombol Enter
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    clearTimeout(searchTimeout);
                     searchSongs();
                 }
-            }, 800); // Otomatis eksekusi setelah 0.8 detik
-        });
+            });
+        }
 
-        // Event Listener untuk tombol Enter (buat yang suka cepet)
-        searchInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                clearTimeout(searchTimeout);
-                searchSongs();
-            }
-        });
-
-        // Memastikan tombol klik kaca pembesar merespon
+        // Tombol kaca pembesar
         if (searchBtn) {
             searchBtn.addEventListener('click', () => {
                 clearTimeout(searchTimeout);
@@ -278,7 +292,9 @@
             }
         });
 
-        // Toggle Play/Pause Function
+        // ==========================================
+        // FUNGSI AUDIO PLAYER
+        // ==========================================
         function togglePlayPause() {
             if (audioPlayer.paused) {
                 audioPlayer.play();
@@ -287,7 +303,6 @@
             }
         }
 
-        // Seek Audio Function
         function seekAudio(e) {
             const rect = progressBarContainer.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
@@ -297,7 +312,9 @@
             audioPlayer.currentTime = (clickX / width) * duration;
         }
 
-        // Fungsi Utama Pencarian (Menggunakan iTunes Search API + Jalur Anti-Blokir)
+        // ==========================================
+        // FUNGSI PENCARIAN & KARAOKE NAVIGATION
+        // ==========================================
         async function searchSongs() {
             const query = searchInput.value.trim();
             if (!query) return;
@@ -371,7 +388,6 @@
             }
         }
 
-        // Buka Halaman Karaoke
         function openKaraoke(title, artist, previewUrl, artworkUrl) {
             // Sembunyikan pencarian, tampilkan karaoke
             searchPage.classList.add('hidden');
@@ -398,14 +414,13 @@
             
             // Otomatis mainkan lagu
             audioPlayer.play().catch(e => {
-                console.log("Autoplay ditahan browser, butuh interaksi user.");
+                console.log("Autoplay ditahan browser, klik play manual ya.");
             });
 
             // Ambil Lirik menggunakan Gemini AI
             fetchLyricsWithAI(artist, title);
         }
 
-        // Tutup Halaman Karaoke
         function closeKaraoke() {
             audioPlayer.pause();
             audioPlayer.src = "";
@@ -418,10 +433,26 @@
             searchPage.classList.remove('hidden');
         }
 
-        // Fungsi Mengambil Lirik dengan Gemini AI (Implementasi Endpoint yang Benar)
+        // ==========================================
+        // FUNGSI LIRIK AI
+        // ==========================================
         async function fetchLyricsWithAI(artist, title) {
             lyricsLoading.classList.remove('hidden');
             lyricsLoading.classList.add('flex');
+            
+            // Cek jika API Key kosong (kondisi di GitHub Pages)
+            if (!apiKey) {
+                lyricsContainer.innerHTML = `
+                    <p class="text-yellow-400 mt-16 text-sm">
+                        <i class="fas fa-key text-2xl mb-2"></i><br>
+                        Ups! Karena web ini dihosting di tempat umum, API Key untuk mencari lirik tidak tersedia.<br><br>
+                        Tapi kamu masih bisa memutar lagu dan menyinkronkan efek suaramu!
+                    </p>`;
+                lyricsLoading.classList.add('hidden');
+                lyricsLoading.classList.remove('flex');
+                return;
+            }
+
             lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Sedang menyusun lirik...</p>';
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
@@ -429,7 +460,6 @@
                            Hanya berikan teks liriknya saja. Jangan tambahkan intro, outro, atau teks percakapan apapun.
                            Jika kamu benar-benar tidak tahu liriknya, balas dengan "Maaf, lirik tidak ditemukan."`;
 
-            // Implementasi Exponential Backoff untuk keandalan API
             const maxRetries = 3;
             let delay = 1000;
 
@@ -437,38 +467,31 @@
                 try {
                     const response = await fetch(url, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [{ text: prompt }]
-                            }]
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
 
                     if (!response.ok) throw new Error('API Request Failed');
 
                     const data = await response.json();
-                let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (lyricsText) {
-                    // Simpan lirik baris per baris ke dalam array untuk proses Sinkronisasi Mic
-                    currentLyricsArray = lyricsText.split('\n').filter(line => line.trim() !== '');
+                    if (lyricsText) {
+                        currentLyricsArray = lyricsText.split('\n').filter(line => line.trim() !== '');
+                        
+                        let formattedLyrics = '';
+                        currentLyricsArray.forEach((line, index) => {
+                            formattedLyrics += `<div id="lyric-${index}" class="lyric-line py-2 text-gray-400 hover:text-white cursor-pointer" onclick="manualSync(${index})">${line}</div>`;
+                        });
+                        
+                        lyricsContainer.innerHTML = formattedLyrics;
+                    } else {
+                        lyricsContainer.innerHTML = '<p class="text-red-400 mt-20"><i class="fas fa-frown"></i> Maaf Ozza, lirik tidak ditemukan.</p>';
+                    }
                     
-                    let formattedLyrics = '';
-                    currentLyricsArray.forEach((line, index) => {
-                        formattedLyrics += `<div id="lyric-${index}" class="lyric-line py-2 text-gray-400 hover:text-white cursor-pointer" onclick="manualSync(${index})">${line}</div>`;
-                    });
-                    
-                    lyricsContainer.innerHTML = formattedLyrics;
-                } else {
-                    lyricsContainer.innerHTML = '<p class="text-red-400 mt-20"><i class="fas fa-frown"></i> Maaf Ozza, lirik tidak ditemukan.</p>';
-                }
-                
-                lyricsLoading.classList.add('hidden');
+                    lyricsLoading.classList.add('hidden');
                     lyricsLoading.classList.remove('flex');
-                    return; // Berhasil, keluar dari loop
+                    return; 
 
                 } catch (error) {
                     console.error(`Attempt ${i + 1} failed:`, error);
@@ -478,7 +501,7 @@
                         lyricsLoading.classList.remove('flex');
                     } else {
                         await new Promise(res => setTimeout(res, delay));
-                        delay *= 2; // Exponential backoff
+                        delay *= 2; 
                     }
                 }
             }
@@ -498,7 +521,7 @@
                 micBtn.classList.replace('bg-purple-600', 'bg-slate-700');
                 micIcon.classList.replace('fa-microphone', 'fa-microphone-slash');
                 micText.textContent = 'Aktifkan Mic (Sync Lirik & Efek Suara)';
-                kArtwork.style.boxShadow = '0 0 30px rgba(168,85,247,0.4)'; // Reset glow cover album
+                kArtwork.style.boxShadow = '0 0 30px rgba(168,85,247,0.4)'; 
 
                 if (recognition) recognition.stop();
                 if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
@@ -507,7 +530,6 @@
             }
 
             try {
-                // Meminta izin ke browser (kamu harus klik Allow/Izinkan)
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
                 isMicActive = true;
@@ -515,15 +537,12 @@
                 micIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
                 micText.textContent = 'Mic Aktif (Bernyanyilah!)';
 
-                // 1. Setup Audio Visualizer (Cover album berdenyut sesuai suaramu)
                 setupVisualizer(mediaStream);
-
-                // 2. Setup AI Speech Recognition (Dengar & Sync Lirik otomatis)
                 setupSpeechRecognition();
 
             } catch (err) {
                 console.error("Mic error:", err);
-                alert("Gagal mengakses Mikrofon. Pastikan kamu memberi izin ya, Ozza!");
+                alert("Gagal mengakses Mikrofon. Pastikan kamu memberi izin ya!");
             }
         }
 
@@ -551,7 +570,6 @@
                 }
                 const average = values / array.length;
                 
-                // Efek Neon: Besarnya cahaya piringan hitam bergantung pada kerasnya suaramu!
                 const glowBase = 30 + (average * 2);
                 kArtwork.style.boxShadow = `0 0 ${glowBase}px rgba(168,85,247, ${0.4 + (average/200)})`;
             };
@@ -572,7 +590,6 @@
             recognition.onresult = (event) => {
                 if (!isMicActive) return;
                 let transcript = '';
-                // Gabungkan kata-kata yang sedang kamu nyanyikan
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     transcript += event.results[i][0].transcript;
                 }
@@ -580,7 +597,6 @@
             };
 
             recognition.onend = () => {
-                // Restart otomatis jika lagu masih jalan (mencegah mic mati sendiri)
                 if (isMicActive) {
                     try { recognition.start(); } catch(e){}
                 }
@@ -598,7 +614,6 @@
             let bestIdx = -1;
             let maxScore = 0;
 
-            // Logika AI: Mencari baris lirik mana yang paling mirip dengan suara/nyanyianmu
             currentLyricsArray.forEach((line, index) => {
                 const lineWords = line.toLowerCase().split(' ');
                 let score = 0;
@@ -612,27 +627,22 @@
                 }
             });
 
-            // Jika ketemu cocok, panggil animasi scroll
             if (bestIdx !== -1 && maxScore > 0) {
                 manualSync(bestIdx);
             }
         }
 
-        // Fungsi animasi untuk scroll lirik otomatis
         function manualSync(index) {
-            // Matikan efek terang di lirik sebelumnya
             document.querySelectorAll('.lyric-line').forEach(el => {
                 el.classList.remove('lyric-active', 'text-white');
                 el.classList.add('text-gray-400');
             });
 
-            // Nyalakan efek neon di lirik yang sedang dinyanyikan
             const activeLine = document.getElementById(`lyric-${index}`);
             if (activeLine) {
                 activeLine.classList.remove('text-gray-400');
                 activeLine.classList.add('lyric-active', 'text-white');
                 
-                // Auto-scroll liriknya agar posisi lirik yang dinyanyikan selalu di tengah box!
                 activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
