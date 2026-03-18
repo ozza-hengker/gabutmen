@@ -137,7 +137,9 @@
         <div class="absolute inset-0 bg-gradient-to-b from-[#0f172a]/40 via-[#0f172a]/80 to-[#0f172a] pointer-events-none"></div>
 
         <!-- HIDDEN YOUTUBE ENGINE (Mesin Suara Instrumental) -->
-        <div id="hidden-yt-player" class="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"></div>
+        <div class="fixed top-0 left-[-1000px] w-[1px] h-[1px] opacity-0 pointer-events-none z-[-1]">
+            <div id="hidden-yt-player"></div>
+        </div>
 
         <!-- Player Top Bar -->
         <div class="relative z-10 flex items-center justify-between p-6 md:px-12 pt-8 w-full max-w-7xl mx-auto">
@@ -157,7 +159,7 @@
         <div class="relative z-10 flex flex-col items-center w-full max-w-4xl mx-auto px-6 md:px-12 mt-4 md:mt-8">
             
             <!-- Toast Notification -->
-            <div id="audio-status-toast" class="absolute -top-10 bg-black/60 text-white text-xs px-4 py-2 rounded-full backdrop-blur-md transition-opacity duration-300 opacity-0 pointer-events-none">
+            <div id="audio-status-toast" class="absolute -top-10 bg-black/60 text-white text-xs px-4 py-2 rounded-full backdrop-blur-md transition-opacity duration-300 opacity-0 pointer-events-none z-50">
                 <i class="fas fa-info-circle text-pink-400 mr-1"></i> <span id="toast-text">Mencari Instrumental...</span>
             </div>
 
@@ -166,7 +168,7 @@
                 <!-- Spinner Loading di atas Piringan saat mencari lagu -->
                 <div id="p-audio-loading" class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 rounded-full w-56 h-56 md:w-72 md:h-72 mx-auto backdrop-blur-sm hidden">
                     <i class="fas fa-circle-notch fa-spin text-4xl text-pink-500 mb-2"></i>
-                    <p class="text-[10px] text-white font-bold tracking-widest uppercase">MENYIAPKAN AUDIO</p>
+                    <p class="text-[10px] text-white font-bold tracking-widest uppercase mt-2">MEMUAT AUDIO...</p>
                 </div>
 
                 <div id="p-artwork-container" class="w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden border-4 border-white/20 shadow-[0_0_60px_rgba(236,72,153,0.3)] relative transition-all duration-300">
@@ -269,6 +271,7 @@
         let ytPlayer = null;
         let activeEngine = 'itunes'; // 'youtube' or 'itunes'
         let progressInterval = null;
+        let ytFallbackTimeout = null;
 
         window.loginSpotify = loginSpotify;
         window.openKaraoke = openKaraoke;
@@ -577,13 +580,14 @@
             const toast = document.getElementById('audio-status-toast');
             document.getElementById('toast-text').textContent = message;
             toast.classList.remove('opacity-0');
-            setTimeout(() => toast.classList.add('opacity-0'), 3000);
+            setTimeout(() => toast.classList.add('opacity-0'), 4000);
         }
 
         async function findInstrumentalVideoId(title, artist) {
             if (!apiKey) return null;
             try {
-                const prompt = `Temukan 1 ID Video YouTube untuk lagu instrumental/karaoke ini: "${title} ${artist} karaoke acoustic instrumental". PENTING: Kembalikan HANYA 11 karakter ID videonya saja. Jangan beri teks tambahan, jangan ada kutip. Contoh: dQw4w9WgXcQ`;
+                // Perintah AI yang diperketat untuk hanya mencari instrumental tanpa vocal
+                const prompt = `Temukan 1 ID Video YouTube untuk lagu instrumental karaoke ini: "${title} ${artist} karaoke instrumental no vocal". PENTING: Kembalikan HANYA 11 karakter ID videonya saja. Jangan beri teks tambahan, jangan ada kutip. Contoh: dQw4w9WgXcQ`;
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
                 const response = await fetch(url, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -604,13 +608,19 @@
                     resolve(true);
                 } else {
                     ytPlayer = new YT.Player('hidden-yt-player', {
-                        height: '0',
-                        width: '0',
+                        height: '10', // Dibuat lebih dari 0 agar tidak diblokir browser
+                        width: '10',
                         videoId: videoId,
-                        playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1 },
+                        playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'playsinline': 1 },
                         events: {
-                            'onReady': () => resolve(true),
-                            'onError': () => resolve(false),
+                            'onReady': (event) => {
+                                event.target.playVideo(); // Paksa putar
+                                resolve(true);
+                            },
+                            'onError': (event) => {
+                                console.warn("Video YT Error atau diblokir:", event.data);
+                                resolve(false); // Gagal, harus fallback
+                            },
                             'onStateChange': onYtStateChange
                         }
                     });
@@ -623,12 +633,16 @@
             const playIcon = document.getElementById('p-play-icon');
             
             if (event.data == YT.PlayerState.PLAYING) {
+                // MATIKAN TIMEOUT KARENA YOUTUBE BERHASIL JALAN!
+                if (typeof ytFallbackTimeout !== 'undefined') clearTimeout(ytFallbackTimeout);
+                
                 activeEngine = 'youtube';
-                document.getElementById('p-audio-loading').classList.add('hidden'); // Sembunyikan loading
+                document.getElementById('p-audio-loading').classList.add('hidden');
+                showToast("Memutar Full Instrumental 🎵");
+                
                 artworkSpin.classList.add('spin');
                 playIcon.classList.replace('fa-play', 'fa-pause');
                 
-                // Update Time
                 document.getElementById('p-time-duration').textContent = formatTime(ytPlayer.getDuration());
                 if (!progressInterval) progressInterval = setInterval(updateYtProgress, 500);
 
@@ -680,6 +694,7 @@
             audioEl.pause();
             if(ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
             clearInterval(progressInterval);
+            if (ytFallbackTimeout) clearTimeout(ytFallbackTimeout);
             
             document.getElementById('p-lyrics-text').innerHTML = '';
             document.getElementById('p-time-current').textContent = '0:00';
@@ -694,19 +709,26 @@
             // 2. Mulai siapkan Engine Instrumental (Hidden YouTube)
             activeEngine = 'none';
             audioLoading.classList.remove('hidden');
+            showToast("Mencari Instrumen Full...");
 
             const ytVideoId = await findInstrumentalVideoId(title, artist);
             
             if (ytVideoId) {
-                showToast("Memulai Instrumental Penuh...");
                 const isYtSuccess = await initHiddenYtEngine(ytVideoId);
                 
-                // Beri waktu 3 detik, jika YT tidak mau PLAY (karena embed blocked), jatuh ke iTunes
-                setTimeout(() => {
+                // Jika error saat inisialisasi, langsung jatuh ke iTunes
+                if (!isYtSuccess) {
+                    fallbackToItunes(previewUrl);
+                    return;
+                }
+                
+                // Beri waktu 8 DETIK untuk YouTube loading (diperpanjang agar tidak gagal prematur)
+                ytFallbackTimeout = setTimeout(() => {
                     if(activeEngine !== 'youtube') {
+                        console.log("YouTube Timeout, jatuh ke iTunes...");
                         fallbackToItunes(previewUrl);
                     }
-                }, 3500);
+                }, 8000);
 
             } else {
                 fallbackToItunes(previewUrl);
@@ -714,8 +736,8 @@
         }
 
         function fallbackToItunes(previewUrl) {
-            if(activeEngine === 'youtube') return; // Jika YT sudah jalan, jangan ganggu
-            showToast("Memutar Preview Asli (Dengan Vokal)");
+            if(activeEngine === 'youtube') return; // Jika YT sudah jalan, abaikan
+            showToast("Memutar Lagu Asli (Vokal)");
             activeEngine = 'itunes';
             const audioEl = document.getElementById('p-audio-element');
             document.getElementById('p-audio-loading').classList.add('hidden');
@@ -733,6 +755,7 @@
             audioEl.src = "";
             if(ytPlayer && typeof ytPlayer.stopVideo === 'function') ytPlayer.stopVideo();
             clearInterval(progressInterval);
+            if (ytFallbackTimeout) clearTimeout(ytFallbackTimeout);
             
             document.getElementById('p-artwork-container').classList.remove('spin');
             if (isMicActive) toggleMic(); 
@@ -749,7 +772,6 @@
         const playIcon = document.getElementById('p-play-icon');
         const artworkSpin = document.getElementById('p-artwork-container');
 
-        // Event Listener untuk iTunes
         audioEl.addEventListener('play', () => { if(activeEngine === 'itunes') { artworkSpin.classList.add('spin'); playIcon.classList.replace('fa-play', 'fa-pause'); }});
         audioEl.addEventListener('pause', () => { if(activeEngine === 'itunes') { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); }});
         audioEl.addEventListener('ended', () => { if(activeEngine === 'itunes') { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); }});
