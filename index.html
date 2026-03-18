@@ -123,13 +123,28 @@
                     <p id="k-artist" class="text-xl text-purple-300 mb-6">Nama Artis</p>
                     
                     <!-- Audio Player -->
-                    <div class="w-full bg-slate-800/50 rounded-full p-2 border border-slate-700 backdrop-blur-sm">
-                        <audio id="audio-player" controls class="w-full h-10 outline-none">
+                    <div class="w-full flex flex-col gap-2">
+                        <audio id="audio-player" class="hidden">
                             <source id="audio-source" src="" type="audio/mpeg">
-                            Browser kamu tidak mendukung elemen audio.
                         </audio>
+                        
+                        <!-- Custom Player UI -->
+                        <div class="flex items-center gap-4 bg-slate-800/80 p-3 rounded-full border border-slate-600 shadow-inner">
+                            <button id="play-pause-btn" onclick="togglePlayPause()" class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.6)] shrink-0 cursor-pointer">
+                                <i id="play-icon" class="fas fa-play text-2xl ml-1"></i>
+                            </button>
+                            <div class="flex-1 flex flex-col gap-1 pr-4">
+                                <div class="flex justify-between text-xs text-purple-300 font-medium px-1">
+                                    <span id="current-time">0:00</span>
+                                    <span id="duration-time">0:30</span>
+                                </div>
+                                <div id="progress-bar-container" class="h-2 bg-slate-700 rounded-full cursor-pointer relative" onclick="seekAudio(event)">
+                                    <div id="progress-fill" class="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full w-0 pointer-events-none transition-all duration-75"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2"><i class="fas fa-info-circle"></i> Memutar preview audio 30 detik dari iTunes.</p>
+                    <p class="text-xs text-gray-400 mt-3"><i class="fas fa-info-circle"></i> Memutar preview audio 30 detik dari iTunes.</p>
                 </div>
             </div>
 
@@ -180,6 +195,13 @@
         const lyricsLoading = document.getElementById('lyrics-loading');
         const searchBtn = document.getElementById('search-btn');
 
+        // Custom Player Elements
+        const playIcon = document.getElementById('play-icon');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationTimeEl = document.getElementById('duration-time');
+        const progressFill = document.getElementById('progress-fill');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+
         // Variables for Mic Sync & Visualizer
         let isMicActive = false;
         let recognition = null;
@@ -215,9 +237,65 @@
         }
 
         // Kontrol Animasi Putar Cover Album
-        audioPlayer.addEventListener('play', () => kArtwork.classList.add('spin'));
-        audioPlayer.addEventListener('pause', () => kArtwork.classList.remove('spin'));
-        audioPlayer.addEventListener('ended', () => kArtwork.classList.remove('spin'));
+        audioPlayer.addEventListener('play', () => {
+            kArtwork.classList.add('spin');
+            playIcon.classList.replace('fa-play', 'fa-pause');
+            playIcon.classList.remove('ml-1');
+        });
+        
+        audioPlayer.addEventListener('pause', () => {
+            kArtwork.classList.remove('spin');
+            playIcon.classList.replace('fa-pause', 'fa-play');
+            playIcon.classList.add('ml-1');
+        });
+        
+        audioPlayer.addEventListener('ended', () => {
+            kArtwork.classList.remove('spin');
+            playIcon.classList.replace('fa-pause', 'fa-play');
+            playIcon.classList.add('ml-1');
+        });
+
+        // Update Progress Bar & Time
+        audioPlayer.addEventListener('timeupdate', () => {
+            const current = audioPlayer.currentTime;
+            const duration = audioPlayer.duration || 30;
+            
+            const currentMins = Math.floor(current / 60);
+            const currentSecs = Math.floor(current % 60).toString().padStart(2, '0');
+            currentTimeEl.textContent = `${currentMins}:${currentSecs}`;
+            
+            const progressPercent = (current / duration) * 100;
+            progressFill.style.width = `${progressPercent}%`;
+        });
+
+        // Set Duration when metadata is loaded
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            const duration = audioPlayer.duration;
+            if(duration && !isNaN(duration) && duration !== Infinity) {
+                const durationMins = Math.floor(duration / 60);
+                const durationSecs = Math.floor(duration % 60).toString().padStart(2, '0');
+                durationTimeEl.textContent = `${durationMins}:${durationSecs}`;
+            }
+        });
+
+        // Toggle Play/Pause Function
+        function togglePlayPause() {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+            } else {
+                audioPlayer.pause();
+            }
+        }
+
+        // Seek Audio Function
+        function seekAudio(e) {
+            const rect = progressBarContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const duration = audioPlayer.duration || 30;
+            
+            audioPlayer.currentTime = (clickX / width) * duration;
+        }
 
         // Fungsi Utama Pencarian (Menggunakan iTunes Search API + Jalur Anti-Blokir)
         async function searchSongs() {
@@ -315,9 +393,13 @@
             // Reset Lirik
             lyricsContainer.innerHTML = '';
             kArtwork.classList.remove('spin');
+            progressFill.style.width = '0%';
+            currentTimeEl.textContent = '0:00';
             
             // Otomatis mainkan lagu
-            audioPlayer.play().catch(e => console.log("Autoplay ditahan browser, butuh interaksi user."));
+            audioPlayer.play().catch(e => {
+                console.log("Autoplay ditahan browser, butuh interaksi user.");
+            });
 
             // Ambil Lirik menggunakan Gemini AI
             fetchLyricsWithAI(artist, title);
