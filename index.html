@@ -854,7 +854,10 @@
 
             // 2. JALUR AI (Butuh API Key Gemini)
             // Jika jalur publik gagal, web akan meminta bantuan AI.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            // Cek lokasi hosting: gunakan model 1.5-flash untuk GitHub, dan model preview untuk Canvas
+            const isLocalPreview = typeof __firebase_config !== 'undefined';
+            const modelName = isLocalPreview ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             const prompt = `Berikan lirik lagu lengkap untuk lagu berjudul "${title}" yang dinyanyikan oleh "${artist}". Hanya berikan teks liriknya saja. Jangan tambahkan intro, outro, atau teks percakapan apapun. Jika kamu benar-benar tidak tahu liriknya, balas dengan "Maaf, lirik tidak ditemukan."`;
 
             lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Database publik kosong, mencoba menghubungi AI...</p>';
@@ -867,7 +870,11 @@
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
                     
-                    if (!response.ok) throw new Error("API Key kosong");
+                    if (!response.ok) {
+                        const errDetails = await response.text();
+                        console.error("Gemini API Error:", errDetails);
+                        throw new Error("Gagal memanggil AI");
+                    }
                     
                     const data = await response.json();
                     let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -881,12 +888,13 @@
                     }
                     return; 
                 } catch (error) {
+                    console.error("Percobaan API gagal:", error);
                     if (i === 2) {
                         lyricsContainer.innerHTML = `
                             <p class="text-yellow-400 mt-16 px-6 text-sm leading-relaxed">
-                                <i class="fas fa-search-minus text-3xl mb-4"></i><br>
+                                <i class="fas fa-exclamation-triangle text-3xl mb-4"></i><br>
                                 Ups! Lirik lagu <b>${title}</b> tidak tersedia di database publik.<br><br>
-                                Agar web ini bisa menggunakan <b>AI Pencari Lirik</b> untuk lagu yang langka, kamu perlu menambahkan <i>Gemini API Key</i> milikmu di dalam kode program (baris 330).
+                                Koneksi ke AI juga sedang terganggu atau API Key yang dimasukkan tidak dapat diakses dari server. Coba muat ulang lagunya!
                             </p>`;
                         lyricsLoading.classList.add('hidden');
                         lyricsLoading.classList.remove('flex');
