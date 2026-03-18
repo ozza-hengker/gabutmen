@@ -586,13 +586,29 @@
         async function findInstrumentalVideoId(title, artist) {
             if (!apiKey) return null;
             try {
-                // Perintah AI yang diperketat untuk hanya mencari instrumental tanpa vocal
-                const prompt = `Temukan 1 ID Video YouTube untuk lagu instrumental karaoke ini: "${title} ${artist} karaoke instrumental no vocal". PENTING: Kembalikan HANYA 11 karakter ID videonya saja. Jangan beri teks tambahan, jangan ada kutip. Contoh: dQw4w9WgXcQ`;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                const prompt = `Cari 1 ID Video YouTube (11 karakter) untuk lagu instrumental karaoke ini: "${title} ${artist} karaoke instrumental". WAJIB: Kembalikan HANYA 11 karakter ID videonya saja. Tanpa teks tambahan, tanpa kutip, tanpa link. Contoh: dQw4w9WgXcQ`;
+                
+                // Set AI Model based on environment
+                const isLocalPreview = typeof __firebase_config !== 'undefined';
+                const modelName = isLocalPreview ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                
+                // BYPASS SAFETY SETTINGS: Pastikan AI mau memberikan jawaban meski lagu dianggap eksplisit
+                const safetySettings = [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ];
+
                 const response = await fetch(url, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        safetySettings: safetySettings 
+                    })
                 });
+
                 const data = await response.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
                 const match = text.match(/[a-zA-Z0-9_-]{11}/);
@@ -608,18 +624,18 @@
                     resolve(true);
                 } else {
                     ytPlayer = new YT.Player('hidden-yt-player', {
-                        height: '10', // Dibuat lebih dari 0 agar tidak diblokir browser
+                        height: '10', 
                         width: '10',
                         videoId: videoId,
                         playerVars: { 'autoplay': 1, 'controls': 0, 'disablekb': 1, 'playsinline': 1 },
                         events: {
                             'onReady': (event) => {
-                                event.target.playVideo(); // Paksa putar
+                                event.target.playVideo(); 
                                 resolve(true);
                             },
                             'onError': (event) => {
                                 console.warn("Video YT Error atau diblokir:", event.data);
-                                resolve(false); // Gagal, harus fallback
+                                resolve(false); 
                             },
                             'onStateChange': onYtStateChange
                         }
@@ -633,7 +649,6 @@
             const playIcon = document.getElementById('p-play-icon');
             
             if (event.data == YT.PlayerState.PLAYING) {
-                // MATIKAN TIMEOUT KARENA YOUTUBE BERHASIL JALAN!
                 if (typeof ytFallbackTimeout !== 'undefined') clearTimeout(ytFallbackTimeout);
                 
                 activeEngine = 'youtube';
@@ -703,7 +718,7 @@
             document.getElementById('p-artwork-container').classList.remove('spin');
             document.getElementById('p-play-icon').classList.replace('fa-pause', 'fa-play');
 
-            // 1. Mulai fetch lirik
+            // 1. Mulai fetch lirik (Dengan Safety Filter Bypass + Database Baru LRCLIB)
             fetchLyricsWithAI(artist, title);
 
             // 2. Mulai siapkan Engine Instrumental (Hidden YouTube)
@@ -716,19 +731,18 @@
             if (ytVideoId) {
                 const isYtSuccess = await initHiddenYtEngine(ytVideoId);
                 
-                // Jika error saat inisialisasi, langsung jatuh ke iTunes
                 if (!isYtSuccess) {
                     fallbackToItunes(previewUrl);
                     return;
                 }
                 
-                // Beri waktu 8 DETIK untuk YouTube loading (diperpanjang agar tidak gagal prematur)
+                // Beri waktu lebih lama (10 DETIK) agar YouTube tidak terputus terlalu awal
                 ytFallbackTimeout = setTimeout(() => {
                     if(activeEngine !== 'youtube') {
                         console.log("YouTube Timeout, jatuh ke iTunes...");
                         fallbackToItunes(previewUrl);
                     }
-                }, 8000);
+                }, 10000);
 
             } else {
                 fallbackToItunes(previewUrl);
@@ -736,7 +750,7 @@
         }
 
         function fallbackToItunes(previewUrl) {
-            if(activeEngine === 'youtube') return; // Jika YT sudah jalan, abaikan
+            if(activeEngine === 'youtube') return; 
             showToast("Memutar Lagu Asli (Vokal)");
             activeEngine = 'itunes';
             const audioEl = document.getElementById('p-audio-element');
@@ -813,7 +827,7 @@
         }
 
         // ==========================================
-        // FUNGSI LIRIK AI & MIC SYNC
+        // FUNGSI LIRIK AI & MIC SYNC (DIPERBAIKI)
         // ==========================================
         function displayLyrics(lyricsText) {
             let cleanLyrics = lyricsText.replace(/Paroles de la chanson.*\n/ig, '');
@@ -834,39 +848,66 @@
             loading.classList.remove('hidden'); loading.classList.add('flex');
             loading.querySelector('p').textContent = "Mencari lirik lagu...";
 
+            // 1. MENGGUNAKAN DATABASE SUPER BESAR & STABIL (LRCLIB)
             try {
-                const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+                const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(artist + ' ' + title)}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.lyrics) { displayLyrics(data.lyrics); return; }
+                    if (data && data.length > 0 && data[0].plainLyrics) { 
+                        displayLyrics(data[0].plainLyrics); 
+                        return; // Jika ketemu, selesai!
+                    }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.log("LRCLIB gagal, lanjut memanggil AI Gemini...");
+            }
 
+            // 2. FALLBACK KE AI GEMINI DENGAN SENSOR DIMATIKAN
             const isLocalPreview = typeof __firebase_config !== 'undefined';
             const modelName = isLocalPreview ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const prompt = `Berikan lirik lagu lengkap untuk lagu berjudul "${title}" yang dinyanyikan oleh "${artist}". Hanya berikan teks liriknya saja. Jangan tambahkan intro, outro, atau teks percakapan apapun. Jika kamu benar-benar tidak tahu liriknya, balas dengan "Maaf, lirik tidak ditemukan."`;
+            const prompt = `Tuliskan lirik lagu lengkap "${title}" oleh "${artist}". WAJIB: Hanya berikan teks liriknya saja dari awal sampai akhir. Jangan tambahkan intro, judul, penjelasan, atau teks apapun selain lirik.`;
 
             loading.querySelector('p').textContent = "AI sedang menyusun lirik...";
+
+            // BYPASS SENSOR: Mengizinkan lirik sedih/kasar/eksplisit agar tidak diblokir oleh AI
+            const safetySettings = [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ];
 
             for (let i = 0; i < 3; i++) {
                 try {
                     const response = await fetch(url, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                        body: JSON.stringify({ 
+                            contents: [{ parts: [{ text: prompt }] }],
+                            safetySettings: safetySettings 
+                        })
                     });
+                    
                     if (!response.ok) throw new Error("API Error");
                     const data = await response.json();
+                    
+                    // Cek jika tetap terblokir
+                    if (data.candidates && data.candidates[0].finishReason === "SAFETY") {
+                        throw new Error("Lirik diblokir sistem.");
+                    }
+
                     let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (lyricsText && !lyricsText.includes("Maaf, lirik tidak ditemukan")) displayLyrics(lyricsText);
-                    else {
-                        document.getElementById('p-lyrics-text').innerHTML = '<p class="text-white mt-20">Lirik tidak ditemukan.</p>';
+                    
+                    if (lyricsText && lyricsText.length > 20) {
+                        displayLyrics(lyricsText);
+                    } else {
+                        document.getElementById('p-lyrics-text').innerHTML = '<p class="text-white mt-20">Lirik tidak ditemukan di database manapun.</p>';
                         loading.classList.add('hidden'); loading.classList.remove('flex');
                     }
                     return; 
                 } catch (error) {
                     if (i === 2) {
-                        document.getElementById('p-lyrics-text').innerHTML = `<p class="text-white mt-16 px-6 text-sm">Gagal memuat lirik AI.</p>`;
+                        document.getElementById('p-lyrics-text').innerHTML = `<p class="text-white mt-16 px-6 text-sm">Gagal memuat lirik AI. Silakan coba lagi.</p>`;
                         loading.classList.add('hidden'); loading.classList.remove('flex');
                     } else await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
                 }
