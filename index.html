@@ -37,13 +37,13 @@
         .lyrics-box::-webkit-scrollbar-thumb { background-color: #a855f7; border-radius: 4px; }
 
         /* Animasi piringan hitam */
-        .spin { animation: spin 4s linear infinite; }
+        .spin { animation: spin 8s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         /* Efek Lirik Aktif (Super Besar) */
         .lyric-line {
-            transition: all 0.3s ease;
-            opacity: 0.5;
+            transition: all 0.4s ease;
+            opacity: 0.3;
             transform: scale(0.95);
         }
         .lyric-active {
@@ -51,7 +51,7 @@
             opacity: 1;
             font-size: 1.4em;
             font-weight: 800;
-            text-shadow: 0 0 20px rgba(236, 72, 153, 0.8);
+            text-shadow: 0 0 25px rgba(236, 72, 153, 0.9);
             transform: scale(1.05);
         }
 
@@ -141,7 +141,7 @@
         <!-- Blur Background Cover -->
         <div id="p-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-40 blur-[60px] scale-110 pointer-events-none transition-all duration-1000"></div>
         <!-- Dark Gradient Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-b from-[#0f172a]/70 via-[#0f172a]/80 to-[#0f172a] pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-[#0f172a]/40 via-[#0f172a]/80 to-[#0f172a] pointer-events-none"></div>
 
         <!-- Player Top Bar -->
         <div class="relative z-10 flex items-center justify-between p-6 md:px-12 pt-8 w-full max-w-7xl mx-auto">
@@ -157,70 +157,38 @@
             </button>
         </div>
 
-        <!-- Center Content Area (Video & Controls) -->
-        <div class="relative z-10 flex flex-col items-center w-full max-w-5xl mx-auto px-6 md:px-12 mt-4">
+        <!-- Center Content Area (Audio & Controls) -->
+        <div class="relative z-10 flex flex-col items-center w-full max-w-4xl mx-auto px-6 md:px-12 mt-4 md:mt-8">
             
-            <!-- Media Container -->
-            <div class="w-full flex justify-center mb-6">
-                <!-- YouTube Mode -->
-                <div id="p-yt-wrapper" class="w-full max-w-3xl aspect-video rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.2)] bg-black relative border-2 border-white/10">
-                    <div id="p-yt-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
-                        <i class="fas fa-circle-notch fa-spin text-5xl text-pink-500 mb-4"></i>
-                        <p class="text-gray-300 font-medium">Menyiapkan Video Karaoke...</p>
-                    </div>
-                    <div id="p-yt-error" class="hidden absolute inset-0 flex-col items-center justify-center bg-slate-900 z-10 p-6 text-center">
-                        <i class="fas fa-exclamation-triangle text-5xl text-yellow-500 mb-4"></i>
-                        <p class="text-gray-300 mb-6">Video diblokir oleh YouTube untuk diputar di luar aplikasinya.</p>
-                        <div class="flex gap-4">
-                            <button onclick="retryYtSearch()" class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-full text-white font-bold transition-colors">Coba Lagi</button>
-                            <a id="p-yt-fallback" href="#" target="_blank" class="px-6 py-2.5 bg-red-600 hover:bg-red-500 rounded-full text-white font-bold transition-colors shadow-lg shadow-red-500/30 flex items-center gap-2">
-                                <i class="fab fa-youtube text-xl"></i> Buka di YouTube
-                            </a>
-                        </div>
-                    </div>
-                    <iframe id="p-yt-iframe" class="w-full h-full absolute inset-0 z-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-                </div>
-                
-                <!-- Audio Mode (Gambar Muter) -->
-                <div id="p-audio-wrapper" class="hidden w-full items-center justify-center py-6">
-                    <div class="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-white/20 shadow-[0_0_50px_rgba(236,72,153,0.3)] relative">
-                        <img id="p-artwork" src="" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 m-auto w-10 h-10 bg-[#0f172a] rounded-full border-2 border-slate-700"></div>
-                    </div>
+            <!-- Audio Cover Art (Gambar Muter) -->
+            <div id="p-audio-wrapper" class="flex w-full items-center justify-center py-6 mb-4">
+                <div id="p-artwork-container" class="w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden border-4 border-white/20 shadow-[0_0_60px_rgba(236,72,153,0.3)] relative transition-all duration-300">
+                    <img id="p-artwork" src="" class="w-full h-full object-cover">
+                    <!-- Tengah Piringan Hitam -->
+                    <div class="absolute inset-0 m-auto w-12 h-12 bg-[#0f172a] rounded-full border-[3px] border-slate-700 shadow-inner"></div>
                 </div>
             </div>
 
-            <!-- Player Toggles & Mic Controls -->
-            <div class="w-full flex flex-col md:flex-row items-center justify-between gap-6 mb-4">
-                <!-- Mode Toggle -->
-                <div class="flex gap-3 bg-black/30 p-1.5 rounded-full backdrop-blur-md">
-                    <button id="mode-yt-btn" onclick="setPlayerMode('youtube')" class="px-6 py-2 rounded-full bg-pink-500 text-white font-bold shadow-lg transition-all text-sm">
-                        <i class="fab fa-youtube mr-1"></i> Full Karaoke
-                    </button>
-                    <button id="mode-itunes-btn" onclick="setPlayerMode('itunes')" class="px-6 py-2 rounded-full text-gray-300 hover:text-white transition-all text-sm font-semibold">
-                        <i class="fab fa-apple mr-1"></i> Preview Lagu
-                    </button>
-                </div>
-
-                <!-- Mic Sync Control -->
+            <!-- Mic Sync Control -->
+            <div class="w-full flex justify-center mb-8">
                 <button id="p-mic-btn" onclick="toggleMic()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3 rounded-full font-bold transition-all flex items-center gap-3 shadow-lg backdrop-blur-md group">
                     <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-pink-500 transition-colors" id="p-mic-icon-bg">
                         <i class="fas fa-microphone-slash text-sm" id="p-mic-icon"></i>
                     </div>
-                    <span id="p-mic-text">Mic Sync Nonaktif</span>
+                    <span id="p-mic-text">Mic Sync (Lirik Otomatis & Visualizer)</span>
                 </button>
             </div>
             
-            <!-- iTunes Audio Progress Bar (Muncul hanya saat mode audio) -->
-            <div id="p-audio-controls" class="hidden flex-col w-full max-w-3xl mt-4">
+            <!-- Audio Progress Bar -->
+            <div id="p-audio-controls" class="flex flex-col w-full max-w-2xl mt-2 mb-8">
                 <audio id="p-audio-element" class="hidden"><source src="" type="audio/mpeg"></audio>
                 <div class="flex items-center gap-4">
                     <span id="p-time-current" class="text-sm font-medium text-gray-300 w-10 text-right">0:00</span>
-                    <div class="flex-1 h-2 bg-white/20 rounded-full cursor-pointer relative" onclick="seekAudio(event)" id="p-progress-bg">
-                        <div id="p-progress-fill" class="absolute top-0 left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full w-0 transition-all duration-75 shadow-[0_0_10px_rgba(236,72,153,0.8)]"></div>
+                    <div class="flex-1 h-3 bg-white/10 rounded-full cursor-pointer relative shadow-inner overflow-hidden" onclick="seekAudio(event)" id="p-progress-bg">
+                        <div id="p-progress-fill" class="absolute top-0 left-0 h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full w-0 transition-all duration-75 shadow-[0_0_15px_rgba(236,72,153,0.8)]"></div>
                     </div>
                     <span id="p-time-duration" class="text-sm font-medium text-gray-300 w-10">0:30</span>
-                    <button onclick="togglePlayPause()" class="w-12 h-12 ml-4 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg shrink-0">
+                    <button onclick="togglePlayPause()" class="w-14 h-14 ml-2 bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_20px_rgba(236,72,153,0.5)] shrink-0">
                         <i id="p-play-icon" class="fas fa-play text-xl ml-1"></i>
                     </button>
                 </div>
@@ -228,12 +196,12 @@
         </div>
 
         <!-- Super Large Lyrics Area -->
-        <div class="relative z-10 flex-1 overflow-y-auto px-6 md:px-20 mt-6 pb-32 lyrics-box" id="p-lyrics-container">
-            <div id="p-lyrics-loading" class="flex flex-col items-center justify-center h-full text-pink-400">
-                <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
-                <p class="text-lg font-medium">Menyelaraskan Lirik AI...</p>
+        <div class="relative z-10 flex-1 overflow-y-auto px-6 md:px-20 pb-32 lyrics-box" id="p-lyrics-container">
+            <div id="p-lyrics-loading" class="flex flex-col items-center justify-center h-full text-pink-400 pt-10">
+                <i class="fas fa-spinner fa-spin text-5xl mb-4"></i>
+                <p class="text-lg font-medium">Menyiapkan Lirik...</p>
             </div>
-            <div id="p-lyrics-text" class="text-2xl md:text-4xl leading-relaxed md:leading-loose font-bold text-center text-white/40 pb-64 pt-10 max-w-4xl mx-auto">
+            <div id="p-lyrics-text" class="text-2xl md:text-5xl leading-[1.8] md:leading-loose font-bold text-center text-white/40 pb-64 pt-4 max-w-4xl mx-auto">
                 <!-- Teks Lirik -->
             </div>
         </div>
@@ -279,7 +247,6 @@
         // ==========================================
         // STATE & EXPORTS
         // ==========================================
-        let currentMode = 'youtube'; 
         let isMicActive = false;
         let recognition = null;
         let audioContext = null;
@@ -288,7 +255,6 @@
         let searchTimeout = null;
         let spotifyAccessToken = null;
         let currentPlayingSong = null;
-        let lastYtQuery = ""; 
 
         window.loginSpotify = loginSpotify;
         window.openKaraoke = openKaraoke;
@@ -297,11 +263,9 @@
         window.seekAudio = seekAudio;
         window.toggleMic = toggleMic;
         window.manualSync = manualSync;
-        window.setPlayerMode = setPlayerMode;
         window.toggleFavoriteCurrentSong = toggleFavoriteCurrentSong;
         window.removeFavorite = removeFavorite;
         window.clearSearch = clearSearch;
-        window.retryYtSearch = () => { if(lastYtQuery) loadYtVideo(lastYtQuery); };
 
         // ==========================================
         // INITIALIZATION
@@ -339,7 +303,7 @@
                     ${isFavList ? 
                     `<button class="text-slate-400 hover:text-pink-500 p-3 transition-transform hover:scale-125 shrink-0" onclick="event.stopPropagation(); removeFavorite('${songId}')" title="Hapus Favorit"><i class="fas fa-heart text-2xl"></i></button>` 
                     : 
-                    `<button class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-pink-500/30 transition-transform group-hover:scale-105 shrink-0 whitespace-nowrap ml-2">Nyanyi <i class="fas fa-microphone-alt ml-1 hidden sm:inline"></i></button>`}
+                    `<button class="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-pink-500/30 transition-transform group-hover:scale-105 shrink-0 whitespace-nowrap ml-2">Play <i class="fas fa-play ml-1 hidden sm:inline"></i></button>`}
                 </div>
             `;
         }
@@ -450,7 +414,6 @@
             const resSection = document.getElementById('search-results-section');
             const loading = document.getElementById('main-loading');
             
-            // Hide other sections
             document.getElementById('spotify-section').classList.add('hidden');
             document.getElementById('favorites-section').classList.add('hidden');
             document.getElementById('favorites-section').classList.remove('flex');
@@ -555,7 +518,6 @@
         }
 
         async function playFromSpotify(title, artist, coverUrl) {
-            const mainPage = document.getElementById('main-page');
             const loaderId = 'temp-bridging';
             document.body.insertAdjacentHTML('beforeend', `<div id="${loaderId}" class="fixed inset-0 bg-[#0f172a]/90 z-[100] flex flex-col items-center justify-center backdrop-blur-sm"><i class="fas fa-circle-notch fa-spin text-5xl text-pink-500 mb-4"></i><p class="text-lg font-bold text-white">Menyiapkan Lagu...</p></div>`);
 
@@ -587,86 +549,6 @@
             }
         }
 
-        // ==========================================
-        // YOUTUBE SMART SCRAPING & PLAYER MODE
-        // ==========================================
-        async function findYoutubeVideo(query) {
-            const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-            try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
-                const res = await fetch(proxyUrl);
-                if (res.ok) {
-                    const html = (await res.json()).contents;
-                    const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-                    if (match) return match[1];
-                }
-            } catch (e) {}
-
-            try {
-                const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`;
-                const res = await fetch(proxyUrl);
-                if (res.ok) {
-                    const match = (await res.text()).match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-                    if (match) return match[1];
-                }
-            } catch (e) {}
-            return null;
-        }
-
-        async function loadYtVideo(query) {
-            lastYtQuery = query;
-            const ytIframe = document.getElementById('p-yt-iframe');
-            const ytLoading = document.getElementById('p-yt-loading');
-            const ytError = document.getElementById('p-yt-error');
-            const ytFallbackLink = document.getElementById('p-yt-fallback'); 
-
-            ytIframe.src = ""; 
-            ytLoading.classList.remove('hidden'); ytLoading.classList.add('flex');
-            ytError.classList.add('hidden'); ytError.classList.remove('flex');
-
-            const videoId = await findYoutubeVideo(query);
-            ytLoading.classList.add('hidden'); ytLoading.classList.remove('flex');
-
-            if (videoId) ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1`;
-            else {
-                ytFallbackLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-                ytError.classList.remove('hidden'); ytError.classList.add('flex');
-            }
-        }
-
-        function setPlayerMode(mode) {
-            currentMode = mode;
-            const ytWrapper = document.getElementById('p-yt-wrapper');
-            const audioWrapper = document.getElementById('p-audio-wrapper');
-            const audioControls = document.getElementById('p-audio-controls');
-            const btnYt = document.getElementById('mode-yt-btn');
-            const btnItunes = document.getElementById('mode-itunes-btn');
-            const audioEl = document.getElementById('p-audio-element');
-
-            if (mode === 'youtube') {
-                audioEl.pause(); 
-                ytWrapper.classList.remove('hidden');
-                audioWrapper.classList.add('hidden'); audioWrapper.classList.remove('flex');
-                audioControls.classList.add('hidden'); audioControls.classList.remove('flex');
-                
-                btnYt.classList.replace('bg-black/30', 'bg-pink-500');
-                btnYt.classList.replace('text-gray-300', 'text-white');
-                
-                btnItunes.classList.replace('bg-pink-500', 'bg-transparent');
-                btnItunes.classList.replace('text-white', 'text-gray-300');
-            } else {
-                document.getElementById('p-yt-iframe').src = document.getElementById('p-yt-iframe').src; // Pause YT
-                ytWrapper.classList.add('hidden');
-                audioWrapper.classList.remove('hidden'); audioWrapper.classList.add('flex');
-                audioControls.classList.remove('hidden'); audioControls.classList.add('flex');
-                
-                btnItunes.classList.replace('bg-transparent', 'bg-pink-500');
-                btnItunes.classList.replace('text-gray-300', 'text-white');
-
-                btnYt.classList.replace('bg-pink-500', 'bg-transparent');
-                btnYt.classList.replace('text-white', 'text-gray-300');
-            }
-        }
 
         // ==========================================
         // IMMERSIVE FULLSCREEN PLAYER
@@ -699,12 +581,11 @@
             document.getElementById('p-lyrics-text').innerHTML = '';
             document.getElementById('p-time-current').textContent = '0:00';
             document.getElementById('p-progress-fill').style.width = '0%';
-            document.getElementById('p-artwork').parentElement.classList.remove('spin');
-
-            const ytSearchQuery = `${title} ${artist} karaoke instrumental`;
-            loadYtVideo(ytSearchQuery);
             
-            setPlayerMode('youtube');
+            // Pastikan piringan diam sebelum diputar
+            document.getElementById('p-artwork-container').classList.remove('spin');
+            document.getElementById('p-play-icon').classList.replace('fa-pause', 'fa-play');
+
             fetchLyricsWithAI(artist, title);
         }
 
@@ -714,7 +595,7 @@
 
             audioEl.pause();
             audioEl.src = "";
-            document.getElementById('p-yt-iframe').src = ""; 
+            document.getElementById('p-artwork-container').classList.remove('spin');
             
             if (isMicActive) toggleMic(); 
 
@@ -727,15 +608,27 @@
         }
 
         // ==========================================
-        // KONTROL AUDIO PLAYER (ITUNES)
+        // KONTROL AUDIO PLAYER
         // ==========================================
         const audioEl = document.getElementById('p-audio-element');
         const playIcon = document.getElementById('p-play-icon');
-        const artworkSpin = document.getElementById('p-artwork').parentElement;
+        const artworkSpin = document.getElementById('p-artwork-container');
 
-        audioEl.addEventListener('play', () => { artworkSpin.classList.add('spin'); playIcon.classList.replace('fa-play', 'fa-pause'); playIcon.classList.remove('ml-1'); });
-        audioEl.addEventListener('pause', () => { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); playIcon.classList.add('ml-1'); });
-        audioEl.addEventListener('ended', () => { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); playIcon.classList.add('ml-1'); });
+        audioEl.addEventListener('play', () => { 
+            artworkSpin.classList.add('spin'); 
+            playIcon.classList.replace('fa-play', 'fa-pause'); 
+            playIcon.classList.remove('ml-1'); 
+        });
+        audioEl.addEventListener('pause', () => { 
+            artworkSpin.classList.remove('spin'); 
+            playIcon.classList.replace('fa-pause', 'fa-play'); 
+            playIcon.classList.add('ml-1'); 
+        });
+        audioEl.addEventListener('ended', () => { 
+            artworkSpin.classList.remove('spin'); 
+            playIcon.classList.replace('fa-pause', 'fa-play'); 
+            playIcon.classList.add('ml-1'); 
+        });
         
         audioEl.addEventListener('timeupdate', () => {
             const current = audioEl.currentTime; const duration = audioEl.duration || 30;
@@ -756,7 +649,7 @@
         }
 
         // ==========================================
-        // FUNGSI LIRIK AI & GAMING MIC
+        // FUNGSI LIRIK AI & MIC SYNC
         // ==========================================
         function displayLyrics(lyricsText) {
             let cleanLyrics = lyricsText.replace(/Paroles de la chanson.*\n/ig, '');
@@ -775,7 +668,7 @@
         async function fetchLyricsWithAI(artist, title) {
             const loading = document.getElementById('p-lyrics-loading');
             loading.classList.remove('hidden'); loading.classList.add('flex');
-            loading.querySelector('p').textContent = "Mencari lirik di database...";
+            loading.querySelector('p').textContent = "Mencari lirik lagu...";
 
             try {
                 const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
@@ -839,6 +732,9 @@
                 micIcon.classList.replace('fa-microphone', 'fa-microphone-slash');
                 micText.textContent = "Mic Sync Nonaktif";
                 
+                document.getElementById('p-artwork-container').style.boxShadow = '0 0 60px rgba(236,72,153,0.3)'; 
+
+                if (recognition) recognition.stop();
                 if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
                 if (audioContext) audioContext.close();
                 return;
@@ -851,6 +747,7 @@
                 micIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
                 micText.textContent = "Mic Sync Aktif";
                 setupVisualizer(mediaStream);
+                setupSpeechRecognition();
             } catch (err) { alert("Gagal mengakses Mikrofon. Beri izin di browsermu!"); }
         }
 
@@ -873,9 +770,48 @@
                 const average = values / array.length;
                 
                 const blurBg = document.getElementById('p-bg-blur');
+                const artworkContainer = document.getElementById('p-artwork-container');
+                
                 blurBg.style.opacity = 0.4 + (average / 300);
                 blurBg.style.filter = `blur(${60 - (average/10)}px)`;
+                artworkContainer.style.boxShadow = `0 0 ${40 + (average * 2)}px rgba(236, 72, 153, ${0.3 + (average/200)})`;
             };
+        }
+        
+        function setupSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                if (!isMicActive) return;
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    transcript += event.results[i][0].transcript;
+                }
+                syncLyricByText(transcript);
+            };
+            recognition.onend = () => { if (isMicActive) try { recognition.start(); } catch(e){} };
+            recognition.start();
+        }
+
+        function syncLyricByText(spokenText) {
+            if (!spokenText || currentLyricsArray.length === 0) return;
+            const spokenWords = spokenText.toLowerCase().split(' ').filter(w => w.length > 2);
+            if (spokenWords.length === 0) return;
+
+            let bestIdx = -1;
+            let maxScore = 0;
+
+            currentLyricsArray.forEach((line, index) => {
+                const lineWords = line.toLowerCase().split(' ');
+                let score = 0;
+                spokenWords.forEach(sw => { if (lineWords.includes(sw)) score++; });
+                if (score > maxScore) { maxScore = score; bestIdx = index; }
+            });
+            if (bestIdx !== -1 && maxScore > 0) manualSync(bestIdx);
         }
     </script>
 </body>
