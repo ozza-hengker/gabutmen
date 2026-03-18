@@ -2,265 +2,305 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ozza's Global Karaoke 🎤</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ozza's Karaoke App 🎤</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #0f172a;
+            background-color: #000000; /* Background hitam pekat untuk desktop */
             color: #f8fafc;
-            /* Efek background ala room karaoke */
-            background-image: radial-gradient(circle at 50% 0%, #3b0764 0%, #0f172a 70%);
-            min-height: 100vh;
-        }
-        
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .neon-text {
-            text-shadow: 0 0 10px rgba(168, 85, 247, 0.8), 0 0 20px rgba(168, 85, 247, 0.4);
+        /* Menyembunyikan scrollbar untuk kesan native app */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
         }
 
-        .lyrics-box {
-            scrollbar-width: thin;
-            scrollbar-color: #a855f7 #1e293b;
-        }
-        
-        .lyrics-box::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .lyrics-box::-webkit-scrollbar-track {
-            background: #1e293b;
-            border-radius: 4px;
-        }
-        
-        .lyrics-box::-webkit-scrollbar-thumb {
-            background-color: #a855f7;
-            border-radius: 4px;
-        }
-
-        /* Animasi piringan hitam (album art) */
-        .spin {
-            animation: spin 4s linear infinite;
-        }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Efek Lirik Aktif */
+        /* Efek Lirik Aktif (App Style) */
         .lyric-line {
             transition: all 0.3s ease;
+            opacity: 0.6;
+            transform: scale(0.95);
         }
         .lyric-active {
-            color: #e879f9; /* Pink neon terang */
-            font-size: 1.25em;
-            font-weight: bold;
-            text-shadow: 0 0 15px rgba(232, 121, 249, 0.6);
+            color: #ec4899; /* Pink-500 */
+            opacity: 1;
+            font-size: 1.35em;
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(236, 72, 153, 0.6);
             transform: scale(1.05);
         }
 
-        /* Spotify Button Gradient */
-        .btn-spotify {
-            background: linear-gradient(to right, #1DB954, #1ed760);
+        /* Animasi piringan hitam */
+        .spin { animation: spin 4s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Spotify Gradient */
+        .bg-spotify { background: linear-gradient(to right, #1DB954, #1ed760); }
+        
+        /* App Container Constraint (Membatasi lebar maksimal di Desktop agar mirip HP) */
+        .app-container {
+            max-w-md; 
+            margin: 0 auto;
+            background-color: #0f172a; /* Slate-900 */
+            min-height: 100dvh;
+            position: relative;
+            overflow-x: hidden;
+            box-shadow: 0 0 50px rgba(236,72,153,0.1);
+        }
+
+        /* Efek Kaca untuk Bottom Nav */
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
     </style>
 </head>
-<body class="flex flex-col items-center pb-12">
+<body class="flex justify-center w-full min-h-screen">
 
-    <!-- Header -->
-    <header class="w-full text-center py-8 px-4">
-        <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 neon-text mb-2">
-            <i class="fas fa-microphone-alt mr-2 text-purple-400"></i> Ozza's Karaoke Club
-        </h1>
-        <p class="text-gray-400 text-sm md:text-base mb-6">Live dari Malang ke Seluruh Dunia 🌍</p>
+    <!-- APP CONTAINER (Simulasi Layar HP) -->
+    <div class="w-full max-w-[420px] bg-[#0b0f19] h-[100dvh] relative overflow-hidden flex flex-col sm:border-x sm:border-slate-800 shadow-2xl">
         
-        <!-- Tombol Login Spotify -->
-        <button id="spotify-login-btn" onclick="loginSpotify()" class="hidden mx-auto btn-spotify hover:scale-105 text-white px-6 py-2 rounded-full font-bold transition-transform shadow-[0_0_15px_rgba(29,185,84,0.4)] flex items-center justify-center gap-2">
-            <i class="fab fa-spotify text-xl"></i> Sambungkan ke Spotify
-        </button>
-        <div id="spotify-user-info" class="hidden text-green-400 text-sm font-medium flex items-center justify-center gap-2">
-            <i class="fab fa-spotify"></i> Terhubung dengan Spotify
-        </div>
-    </header>
+        <!-- HEADER (Dinamis) -->
+        <header class="pt-10 pb-4 px-5 z-10 relative">
+            <h1 id="header-title" class="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500">
+                OzzaKaraoke <i class="fas fa-microphone-alt text-pink-500 text-xl"></i>
+            </h1>
+        </header>
 
-    <!-- Halaman Pencarian & Home -->
-    <main id="search-page" class="w-full max-w-5xl px-4 flex flex-col items-center transition-all duration-500">
-        
-        <!-- Search Bar -->
-        <div class="w-full max-w-2xl flex gap-2 mb-10">
-            <input type="text" id="search-input" placeholder="Ketik nama lagu atau penyanyi..." 
-                class="w-full bg-slate-800 border border-slate-700 text-white px-6 py-4 rounded-full focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 text-lg shadow-lg">
-            <button id="search-btn" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-4 rounded-full font-bold transition-all shadow-lg hover:shadow-purple-500/50 flex items-center justify-center cursor-pointer">
-                <i class="fas fa-search"></i>
-            </button>
-        </div>
-
-        <!-- Section: Spotify Top Tracks (Muncul kalau login) -->
-        <div id="spotify-section" class="w-full hidden flex-col mb-12">
-            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
-                <i class="fas fa-history text-green-400"></i> Sering Kamu Putar di Spotify
-            </h2>
-            <div id="spotify-loading" class="hidden justify-center my-4">
-                <i class="fas fa-circle-notch fa-spin text-2xl text-green-400"></i>
-            </div>
-            <div id="spotify-grid" class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Lagu Spotify muncul di sini -->
-            </div>
-        </div>
-
-        <!-- Section: Lagu Favorit (Firebase) -->
-        <div id="favorites-section" class="w-full flex-col mb-12">
-            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
-                <i class="fas fa-heart text-pink-500"></i> Lagu Favorit Kamu
-            </h2>
-            <div id="favorites-grid" class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Lagu favorit dari Firebase muncul di sini -->
-            </div>
-            <p id="empty-favorites" class="text-gray-500 text-sm mt-2"><i class="fas fa-info-circle"></i> Belum ada lagu favorit yang disimpan. Klik tombol hati (❤️) saat memutar lagu!</p>
-        </div>
-
-        <!-- Section: Hasil Pencarian (Muncul saat nyari lagu) -->
-        <div id="search-results-section" class="w-full flex-col hidden">
-            <h2 class="text-2xl font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-700 pb-2">
-                <i class="fas fa-search text-purple-400"></i> Hasil Pencarian
-            </h2>
-            <!-- Loading Indicator -->
-            <div id="loading" class="hidden justify-center my-8">
-                <i class="fas fa-circle-notch fa-spin text-4xl text-purple-500 mb-4"></i>
-            </div>
-            <!-- Hasil Pencarian -->
-            <div id="results-grid" class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Card hasil pencarian akan muncul di sini -->
-            </div>
-        </div>
-        
-        <!-- Empty State Utama -->
-        <div id="empty-state" class="text-center mt-4 text-gray-500">
-            <i class="fas fa-music text-6xl mb-4 opacity-20"></i>
-            <p>Cari lagu kesukaanmu atau sambungkan Spotify!</p>
-        </div>
-
-    </main>
-
-    <!-- Halaman Karaoke (Player & Lirik) -->
-    <main id="karaoke-page" class="w-full max-w-4xl px-4 hidden flex-col items-center transition-all duration-500">
-        <button onclick="closeKaraoke()" class="self-start mb-6 text-purple-400 hover:text-purple-300 flex items-center gap-2 transition-colors cursor-pointer">
-            <i class="fas fa-arrow-left"></i> Kembali ke Menu Utama
-        </button>
-
-        <!-- Loading overlay saat bridging dari Spotify ke iTunes -->
-        <div id="karaoke-bridge-loading" class="hidden absolute inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center rounded-3xl">
-            <i class="fas fa-spinner fa-spin text-5xl text-purple-500 mb-4"></i>
-            <p class="text-white text-lg">Menyiapkan audio dari database...</p>
-        </div>
-
-        <div class="glass-panel w-full rounded-3xl p-6 md:p-10 flex flex-col items-center shadow-2xl relative overflow-hidden">
+        <!-- AREA KONTEN (Scrollable) -->
+        <main id="main-content" class="flex-1 overflow-y-auto pb-24 px-5 relative z-0">
             
-            <!-- Judul Lagu & Favorit -->
-            <div class="flex items-start justify-between w-full mb-6">
-                <div class="flex-1 pr-4 text-center md:text-left">
-                    <h2 id="k-title" class="text-3xl md:text-4xl font-bold text-white mb-2 line-clamp-2">Judul Lagu</h2>
-                    <p id="k-artist" class="text-xl text-purple-300">Nama Artis</p>
-                </div>
-                <button id="fav-btn" class="text-slate-400 hover:text-pink-500 transition-colors text-3xl mt-2 group cursor-pointer" title="Simpan ke Favorit">
-                    <i class="far fa-heart transition-transform group-hover:scale-110" id="fav-icon"></i>
-                </button>
-            </div>
-
-            <!-- Toggles for Player Mode -->
-            <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-6 w-full">
-                <button id="mode-yt-btn" onclick="setPlayerMode('youtube')" class="px-6 py-2.5 rounded-full bg-red-600 text-white shadow-lg transition-all flex items-center gap-2 text-sm font-bold">
-                    <i class="fab fa-youtube text-lg"></i> Full Instrumental (YouTube)
-                </button>
-                <button id="mode-itunes-btn" onclick="setPlayerMode('itunes')" class="px-6 py-2.5 rounded-full bg-slate-800 text-gray-400 hover:text-white border border-slate-700 transition-all flex items-center gap-2 text-sm font-bold">
-                    <i class="fab fa-apple text-lg"></i> Preview Lagu Asli 30s
-                </button>
-            </div>
-
-            <!-- PLAYER 1: YOUTUBE FULL KARAOKE (BARU) -->
-            <div id="yt-container" class="w-full aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.2)] mb-8 border-2 border-slate-700 bg-black relative">
-                <!-- Loading State YouTube -->
-                <div id="yt-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
-                    <i class="fas fa-circle-notch fa-spin text-4xl text-red-500 mb-4"></i>
-                    <p class="text-sm text-gray-300 font-medium tracking-wide">Mencari Video Karaoke Instrumental...</p>
-                </div>
-                <!-- Error State YouTube -->
-                <div id="yt-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10 p-4 text-center">
-                    <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
-                    <p class="text-sm text-gray-300 mb-4">Sistem gagal mengambil video karena blokir dari YouTube.</p>
-                    <div class="flex flex-wrap justify-center gap-3">
-                        <button onclick="retryYtSearch()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-white text-sm font-bold transition-colors">Coba Lagi</button>
-                        <a id="yt-fallback-link" href="#" target="_blank" class="px-5 py-2 bg-red-600 hover:bg-red-500 rounded-full text-white text-sm font-bold transition-colors flex items-center gap-2">
-                            <i class="fab fa-youtube"></i> Buka di YouTube
-                        </a>
+            <!-- ===================== -->
+            <!-- TAB: BERANDA (HOME)   -->
+            <!-- ===================== -->
+            <div id="tab-home" class="w-full flex flex-col gap-6 transition-opacity duration-300">
+                
+                <!-- Hero Banner -->
+                <div class="w-full bg-gradient-to-br from-pink-600 to-purple-800 rounded-2xl p-5 relative overflow-hidden shadow-lg">
+                    <div class="absolute -right-4 -bottom-4 opacity-20">
+                        <i class="fas fa-music text-8xl"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <span class="bg-white/20 text-white text-xs font-bold px-2 py-1 rounded-md mb-2 inline-block">UPDATE</span>
+                        <h2 class="text-white text-xl font-bold leading-tight mb-1">Nyanyi Bareng AI!</h2>
+                        <p class="text-white/80 text-xs mb-4">Lirik & Instrumental otomatis.</p>
+                        <button onclick="switchTab('search')" class="bg-white text-purple-700 text-sm font-bold py-2 px-5 rounded-full shadow-md hover:scale-105 transition-transform">
+                            Cari Lagu <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
                     </div>
                 </div>
-                <!-- Iframe YouTube Asli -->
-                <iframe id="yt-iframe" class="w-full h-full absolute inset-0 z-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-            </div>
 
-            <!-- PLAYER 2: ITUNES PREVIEW (LAMA) -->
-            <div id="itunes-container" class="hidden flex-col md:flex-row items-center gap-8 w-full mb-8">
-                <div class="relative w-48 h-48 md:w-56 md:h-56 shrink-0 rounded-full border-4 border-purple-500/30 overflow-hidden shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-                    <img id="k-artwork" src="" alt="Album Art" class="w-full h-full object-cover">
-                    <!-- Titik tengah piringan hitam -->
-                    <div class="absolute inset-0 m-auto w-8 h-8 bg-slate-900 rounded-full border-2 border-slate-700"></div>
-                </div>
-                <div class="flex-1 w-full">
-                    <!-- Audio Player -->
-                    <div class="w-full flex flex-col gap-2">
-                        <audio id="audio-player" class="hidden">
-                            <source id="audio-source" src="" type="audio/mpeg">
-                        </audio>
-                        <!-- Custom Player UI -->
-                        <div class="flex items-center gap-4 bg-slate-800/80 p-3 rounded-full border border-slate-600 shadow-inner">
-                            <button id="play-pause-btn" onclick="togglePlayPause()" class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.6)] shrink-0 cursor-pointer">
-                                <i id="play-icon" class="fas fa-play text-2xl ml-1"></i>
-                            </button>
-                            <div class="flex-1 flex flex-col gap-1 pr-4">
-                                <div class="flex justify-between text-xs text-purple-300 font-medium px-1">
-                                    <span id="current-time">0:00</span>
-                                    <span id="duration-time">0:30</span>
-                                </div>
-                                <div id="progress-bar-container" class="h-2 bg-slate-700 rounded-full cursor-pointer relative" onclick="seekAudio(event)">
-                                    <div id="progress-fill" class="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-400 to-pink-500 rounded-full w-0 pointer-events-none transition-all duration-75"></div>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Spotify Section -->
+                <div>
+                    <div class="flex justify-between items-end mb-3">
+                        <h3 class="text-white font-bold text-lg">For You (Spotify)</h3>
+                        <div id="spotify-user-info" class="hidden text-green-400 text-xs font-medium"><i class="fab fa-spotify"></i> Terhubung</div>
+                    </div>
+                    
+                    <button id="spotify-login-btn" onclick="loginSpotify()" class="w-full bg-spotify hover:scale-[1.02] text-white py-3 rounded-xl font-bold transition-transform shadow-[0_0_15px_rgba(29,185,84,0.3)] flex items-center justify-center gap-2 text-sm mb-4">
+                        <i class="fab fa-spotify text-lg"></i> Hubungkan Spotify-mu
+                    </button>
+                    
+                    <div id="spotify-loading" class="hidden justify-center my-4">
+                        <i class="fas fa-circle-notch fa-spin text-2xl text-green-400"></i>
+                    </div>
+                    
+                    <!-- List Lagu App-Style -->
+                    <div id="spotify-list" class="flex flex-col gap-1">
+                        <!-- Spotify Tracks akan dimuat disini -->
                     </div>
                 </div>
             </div>
 
-            <!-- Mic Sync Control -->
-            <div class="w-full flex justify-center mb-6 border-b border-slate-700/50 pb-6">
-                <button id="mic-btn" onclick="toggleMic()" class="bg-slate-700 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-3 shadow-lg cursor-pointer">
-                    <i class="fas fa-microphone-slash" id="mic-icon"></i> 
-                    <span id="mic-text">Aktifkan Mic (Sinkron Efek Lampu Studio)</span>
+            <!-- ===================== -->
+            <!-- TAB: PENCARIAN        -->
+            <!-- ===================== -->
+            <div id="tab-search" class="w-full hidden flex-col gap-4 transition-opacity duration-300">
+                <div class="sticky top-0 bg-[#0b0f19] pt-2 pb-4 z-10">
+                    <div class="relative w-full">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="search-input" placeholder="Cari artis atau judul lagu..." 
+                            class="w-full bg-slate-800/80 border border-slate-700 text-white pl-11 pr-4 py-3.5 rounded-2xl focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 text-sm">
+                    </div>
+                </div>
+
+                <div id="search-loading" class="hidden justify-center my-8">
+                    <i class="fas fa-circle-notch fa-spin text-3xl text-pink-500"></i>
+                </div>
+
+                <div id="search-empty" class="text-center mt-10 text-gray-500">
+                    <i class="fas fa-search text-5xl mb-3 opacity-20"></i>
+                    <p class="text-sm">Ketik sesuatu untuk mulai mencari.</p>
+                </div>
+
+                <div id="search-results-list" class="flex flex-col gap-1">
+                    <!-- Search Results akan dimuat disini -->
+                </div>
+            </div>
+
+            <!-- ===================== -->
+            <!-- TAB: FAVORIT (PROFIL) -->
+            <!-- ===================== -->
+            <div id="tab-fav" class="w-full hidden flex-col gap-4 transition-opacity duration-300">
+                <h3 class="text-white font-bold text-lg mb-2">Koleksi Lagu Nyanyianmu</h3>
+                
+                <div id="favorites-list" class="flex flex-col gap-1">
+                    <!-- Favorite Tracks akan dimuat disini -->
+                </div>
+
+                <div id="empty-favorites" class="text-center mt-10 text-gray-500">
+                    <i class="fas fa-heart text-5xl mb-3 opacity-20"></i>
+                    <p class="text-sm">Belum ada lagu favorit.<br>Klik tombol hati saat bernyanyi!</p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ===================== -->
+        <!-- BOTTOM NAVIGATION     -->
+        <!-- ===================== -->
+        <nav class="absolute bottom-0 w-full glass-nav flex justify-around items-center pt-3 pb-6 z-40 rounded-t-3xl">
+            <button onclick="switchTab('home')" class="nav-btn active flex flex-col items-center gap-1 text-pink-500 w-16" data-target="home">
+                <i class="fas fa-home text-xl"></i>
+                <span class="text-[10px] font-medium">Beranda</span>
+            </button>
+            <button onclick="switchTab('search')" class="nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-pink-400 transition-colors w-16" data-target="search">
+                <div class="bg-pink-500 text-white w-12 h-12 rounded-full flex items-center justify-center -mt-6 shadow-[0_0_15px_rgba(236,72,153,0.5)] shadow-pink-500 border-4 border-[#0b0f19]">
+                    <i class="fas fa-microphone-alt text-xl"></i>
+                </div>
+                <span class="text-[10px] font-medium mt-0.5">Nyanyi</span>
+            </button>
+            <button onclick="switchTab('fav')" class="nav-btn flex flex-col items-center gap-1 text-slate-500 hover:text-pink-400 transition-colors w-16" data-target="fav">
+                <i class="fas fa-heart text-xl"></i>
+                <span class="text-[10px] font-medium">Favorit</span>
+            </button>
+        </nav>
+
+        <!-- ============================================== -->
+        <!-- FULLSCREEN PLAYER OVERLAY (IMMERSIVE APP VIEW) -->
+        <!-- ============================================== -->
+        <div id="player-screen" class="fixed inset-0 w-full max-w-[420px] mx-auto z-50 bg-[#0b0f19] flex flex-col transform translate-y-full transition-transform duration-500 ease-in-out overflow-hidden">
+            
+            <!-- Blur Background Cover -->
+            <div id="p-bg-blur" class="absolute inset-0 bg-cover bg-center opacity-30 blur-[40px] scale-110 pointer-events-none transition-all duration-1000"></div>
+            <!-- Dark Gradient Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-b from-[#0b0f19]/60 via-[#0b0f19]/80 to-[#0b0f19] pointer-events-none"></div>
+
+            <!-- Player Header -->
+            <div class="relative z-10 flex items-center justify-between p-5 pt-8">
+                <button onclick="closeKaraoke()" class="text-white w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-colors backdrop-blur-md">
+                    <i class="fas fa-chevron-down text-lg"></i>
+                </button>
+                <div class="flex-1 text-center px-4 overflow-hidden">
+                    <h2 id="p-title" class="text-white font-bold text-lg truncate drop-shadow-md">Judul Lagu</h2>
+                    <p id="p-artist" class="text-pink-400 text-xs truncate font-medium drop-shadow-md">Nama Artis</p>
+                </div>
+                <button id="p-fav-btn" onclick="toggleFavoriteCurrentSong()" class="text-white w-10 h-10 flex items-center justify-center bg-white/10 rounded-full hover:bg-white/20 transition-colors backdrop-blur-md">
+                    <i id="p-fav-icon" class="far fa-heart text-lg"></i>
                 </button>
             </div>
 
-            <!-- Lirik Section -->
-            <div class="w-full mt-4">
-                <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
-                    <h3 class="text-xl font-semibold text-white flex items-center gap-2">
-                        <i class="fas fa-align-left text-pink-500"></i> Lirik AI (Untuk Panduan)
-                    </h3>
-                    <div id="lyrics-loading" class="text-sm text-pink-400 hidden items-center gap-2">
-                        <i class="fas fa-spinner fa-spin"></i> Memuat lirik...
+            <!-- Media / Video Container -->
+            <div class="relative z-10 px-5 mb-2 flex justify-center w-full">
+                <!-- YouTube Mode -->
+                <div id="p-yt-wrapper" class="w-full aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black relative border border-white/10">
+                    <div id="p-yt-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
+                        <i class="fas fa-circle-notch fa-spin text-3xl text-pink-500 mb-2"></i>
+                        <p class="text-xs text-gray-400">Menyiapkan Instrumental...</p>
                     </div>
+                    <div id="p-yt-error" class="hidden absolute inset-0 flex-col items-center justify-center bg-slate-900 z-10 p-4 text-center">
+                        <i class="fas fa-exclamation-triangle text-3xl text-yellow-500 mb-2"></i>
+                        <p class="text-xs text-gray-300 mb-3">Video diblokir YouTube.</p>
+                        <a id="p-yt-fallback" href="#" target="_blank" class="px-4 py-1.5 bg-red-600 rounded-full text-white text-xs font-bold"><i class="fab fa-youtube"></i> Buka Eksternal</a>
+                    </div>
+                    <iframe id="p-yt-iframe" class="w-full h-full absolute inset-0 z-0" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                 </div>
                 
-                <div id="lyrics-container" class="lyrics-box w-full h-[300px] overflow-y-auto bg-slate-900/60 rounded-2xl p-6 text-center text-lg md:text-xl leading-relaxed font-medium text-gray-200 shadow-inner">
-                    <!-- Lirik akan dimuat di sini -->
+                <!-- Audio Mode (Gambar Muter) -->
+                <div id="p-audio-wrapper" class="hidden w-full items-center justify-center py-2">
+                    <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 shadow-[0_0_30px_rgba(236,72,153,0.3)] relative">
+                        <img id="p-artwork" src="" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 m-auto w-6 h-6 bg-[#0b0f19] rounded-full border-2 border-slate-700"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Mode Toggles (App style pills) -->
+            <div class="relative z-10 flex justify-center gap-3 px-5 mb-4">
+                <button id="mode-yt-btn" onclick="setPlayerMode('youtube')" class="text-[10px] font-bold px-4 py-1.5 rounded-full bg-pink-500 text-white shadow-lg transition-all border border-pink-400">
+                    <i class="fab fa-youtube mr-1"></i> Mode Karaoke
+                </button>
+                <button id="mode-itunes-btn" onclick="setPlayerMode('itunes')" class="text-[10px] font-bold px-4 py-1.5 rounded-full bg-white/10 text-gray-300 transition-all border border-white/10 hover:bg-white/20 backdrop-blur-md">
+                    <i class="fab fa-apple mr-1"></i> Original 30s
+                </button>
+            </div>
+
+            <!-- Huge Scrolling Lyrics Area -->
+            <div class="relative z-10 flex-1 overflow-y-auto px-6 pb-24 lyrics-box text-center" id="p-lyrics-container">
+                <div id="p-lyrics-loading" class="flex flex-col items-center justify-center h-full text-pink-400">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p class="text-sm">Menyelaraskan Lirik AI...</p>
+                </div>
+                <div id="p-lyrics-text" class="text-lg md:text-xl leading-relaxed font-medium text-white/50 pb-32 pt-10">
+                    <!-- Teks Lirik -->
+                </div>
+            </div>
+
+            <!-- Bottom Controls Overlay -->
+            <div class="absolute bottom-0 w-full bg-gradient-to-t from-[#0b0f19] via-[#0b0f19]/90 to-transparent pt-12 pb-6 px-6 z-20">
+                
+                <!-- iTunes Audio Element (Hidden) -->
+                <audio id="p-audio-element" class="hidden"><source src="" type="audio/mpeg"></audio>
+
+                <!-- iTunes Controls (Muncul hanya saat mode audio) -->
+                <div id="p-audio-controls" class="hidden flex-col mb-4 w-full">
+                    <div class="flex justify-between text-[10px] text-gray-400 mb-1 font-medium px-1">
+                        <span id="p-time-current">0:00</span>
+                        <span id="p-time-duration">0:30</span>
+                    </div>
+                    <div class="h-1.5 bg-white/20 rounded-full cursor-pointer relative" onclick="seekAudio(event)" id="p-progress-bg">
+                        <div id="p-progress-fill" class="absolute top-0 left-0 h-full bg-pink-500 rounded-full w-0 transition-all duration-75 shadow-[0_0_10px_rgba(236,72,153,0.8)]"></div>
+                    </div>
+                    <div class="flex justify-center mt-4">
+                        <button onclick="togglePlayPause()" class="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg">
+                            <i id="p-play-icon" class="fas fa-play text-xl ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Button (Record/Mic) -->
+                <div class="flex justify-center items-end gap-6 relative">
+                    <div class="flex flex-col items-center">
+                        <button class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm backdrop-blur-md">
+                            <i class="fas fa-sliders-h"></i>
+                        </button>
+                        <span class="text-[9px] text-gray-400 mt-1">Efek</span>
+                    </div>
+                    
+                    <div class="flex flex-col items-center relative z-10">
+                        <button id="p-mic-btn" onclick="toggleMic()" class="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 text-white flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:scale-105 transition-transform border-2 border-white/20">
+                            <i id="p-mic-icon" class="fas fa-microphone-alt"></i>
+                        </button>
+                        <span class="text-[10px] font-bold text-white mt-2 drop-shadow-md">SING</span>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <button class="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center text-sm backdrop-blur-md">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <span class="text-[9px] text-gray-400 mt-1">Kamera</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
+
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -270,22 +310,15 @@
         // ==========================================
         // KONFIGURASI API
         // ==========================================
-        const apiKey = "AIzaSyAqkCqh7wOfdkBYpNTrkZZOJfeRMnBfwDI"; // API Key Gemini Ozza
-        
-        // --- KONFIGURASI SPOTIFY ---
+        const apiKey = "AIzaSyAqkCqh7wOfdkBYpNTrkZZOJfeRMnBfwDI"; 
         const SPOTIFY_CLIENT_ID = ""; 
         const REDIRECT_URI = window.location.href.split('#')[0].split('?')[0]; 
 
-        // --- SETUP FIREBASE ---
         let firebaseConfig;
         try {
-            if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
-            } else {
-                throw new Error("Local environment");
-            }
+            if (typeof __firebase_config !== 'undefined') firebaseConfig = JSON.parse(__firebase_config);
+            else throw new Error("Local environment");
         } catch(e) {
-            // FIREBASE OZZA
             firebaseConfig = {
                 apiKey: "AIzaSyD_oQ4qkT4iVAxw0oQ6eQYtAttj_ggxY_0",
                 authDomain: "karaokemen-b06e3.firebaseapp.com",
@@ -306,41 +339,9 @@
         let favoriteSongs = [];
 
         // ==========================================
-        // DOM ELEMENTS
+        // DOM ELEMENTS & STATE
         // ==========================================
-        const searchInput = document.getElementById('search-input');
-        const searchBtn = document.getElementById('search-btn');
-        const resultsGrid = document.getElementById('results-grid');
-        const loadingIndicator = document.getElementById('loading');
-        const emptyState = document.getElementById('empty-state');
-        const searchResultsSection = document.getElementById('search-results-section');
-        
-        const searchPage = document.getElementById('search-page');
-        const karaokePage = document.getElementById('karaoke-page');
-        const bridgeLoading = document.getElementById('karaoke-bridge-loading');
-        
-        const audioPlayer = document.getElementById('audio-player');
-        const kArtwork = document.getElementById('k-artwork');
-        const kTitle = document.getElementById('k-title');
-        const kArtist = document.getElementById('k-artist');
-        const lyricsContainer = document.getElementById('lyrics-container');
-        const lyricsLoading = document.getElementById('lyrics-loading');
-
-        const playIcon = document.getElementById('play-icon');
-        const currentTimeEl = document.getElementById('current-time');
-        const durationTimeEl = document.getElementById('duration-time');
-        const progressFill = document.getElementById('progress-fill');
-        const progressBarContainer = document.getElementById('progress-bar-container');
-
-        const spotifyLoginBtn = document.getElementById('spotify-login-btn');
-        const spotifyUserInfo = document.getElementById('spotify-user-info');
-        const spotifySection = document.getElementById('spotify-section');
-        const spotifyGrid = document.getElementById('spotify-grid');
-        const spotifyLoading = document.getElementById('spotify-loading');
-
-        // Mode Player
         let currentMode = 'youtube'; 
-
         let isMicActive = false;
         let recognition = null;
         let audioContext = null;
@@ -349,8 +350,10 @@
         let searchTimeout = null;
         let spotifyAccessToken = null;
         let currentPlayingSong = null;
-        let lastYtQuery = ""; // Menyimpan judul lagu untuk di-retry
+        let lastYtQuery = ""; 
 
+        // Mengekspos fungsi ke window
+        window.switchTab = switchTab;
         window.loginSpotify = loginSpotify;
         window.closeKaraoke = closeKaraoke;
         window.togglePlayPause = togglePlayPause;
@@ -358,6 +361,8 @@
         window.toggleMic = toggleMic;
         window.manualSync = manualSync;
         window.setPlayerMode = setPlayerMode;
+        window.toggleFavoriteCurrentSong = toggleFavoriteCurrentSong;
+        window.removeFavorite = removeFavorite;
         window.retryYtSearch = () => { if(lastYtQuery) loadYtVideo(lastYtQuery); };
 
         // ==========================================
@@ -366,16 +371,52 @@
         window.onload = () => {
             initFirebaseAuth();
             handleSpotifyAuth();
+            switchTab('home'); // Default tab
         };
+
+        // --- TAB NAVIGATION SYSTEM ---
+        function switchTab(tabId) {
+            const tabs = ['home', 'search', 'fav'];
+            const headerTitle = document.getElementById('header-title');
+
+            // Ganti Header Teks
+            if(tabId === 'home') headerTitle.innerHTML = 'OzzaKaraoke <i class="fas fa-microphone-alt text-pink-500 text-xl"></i>';
+            if(tabId === 'search') headerTitle.innerHTML = 'Pencarian <i class="fas fa-search text-pink-500 text-xl"></i>';
+            if(tabId === 'fav') headerTitle.innerHTML = 'Profil <i class="fas fa-user text-pink-500 text-xl"></i>';
+
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === tabId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                    // Update bottom nav UI
+                    document.querySelectorAll('.nav-btn').forEach(btn => {
+                        if(btn.dataset.target === t) {
+                            if(t === 'search') btn.innerHTML = `<div class="bg-pink-500 text-white w-12 h-12 rounded-full flex items-center justify-center -mt-6 shadow-[0_0_15px_rgba(236,72,153,0.5)] shadow-pink-500 border-4 border-[#0b0f19]"><i class="fas fa-microphone-alt text-xl"></i></div><span class="text-[10px] font-bold text-pink-500 mt-0.5">Nyanyi</span>`;
+                            else {
+                                btn.classList.remove('text-slate-500');
+                                btn.classList.add('text-pink-500');
+                            }
+                        } else {
+                            if(btn.dataset.target === 'search') btn.innerHTML = `<div class="bg-slate-800 text-gray-400 w-12 h-12 rounded-full flex items-center justify-center -mt-6 border-4 border-[#0b0f19]"><i class="fas fa-microphone-alt text-xl"></i></div><span class="text-[10px] font-medium mt-0.5">Nyanyi</span>`;
+                            else {
+                                btn.classList.add('text-slate-500');
+                                btn.classList.remove('text-pink-500');
+                            }
+                        }
+                    });
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+        }
 
         async function initFirebaseAuth() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch(e) { console.error("Firebase auth fail", e); }
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                else await signInAnonymously(auth);
+            } catch(e) { console.error(e); }
         }
 
         onAuthStateChanged(auth, (user) => {
@@ -397,32 +438,36 @@
             });
         }
 
+        // GENERATE APP-STYLE LIST ITEM
+        function generateListItemHTML(songId, title, artist, imgUrl, onclickFn, isFavList = false) {
+            return `
+                <div class="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors cursor-pointer" onclick="${onclickFn}">
+                    <img src="${imgUrl}" class="w-14 h-14 rounded-lg object-cover shadow-md">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-white font-semibold truncate text-sm mb-0.5">${title}</h3>
+                        <p class="text-slate-400 text-xs truncate">${artist}</p>
+                    </div>
+                    ${isFavList ? 
+                    `<button class="text-pink-500 p-2 hover:scale-125 transition-transform" onclick="event.stopPropagation(); removeFavorite('${songId}')"><i class="fas fa-heart text-xl"></i></button>` 
+                    : 
+                    `<button class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg shadow-pink-500/30 whitespace-nowrap">Nyanyi</button>`}
+                </div>
+            `;
+        }
+
         function renderFavorites() {
-            const favGrid = document.getElementById('favorites-grid');
+            const favList = document.getElementById('favorites-list');
             const emptyFav = document.getElementById('empty-favorites');
-            favGrid.innerHTML = '';
+            favList.innerHTML = '';
             
-            if (favoriteSongs.length === 0) {
-                emptyFav.classList.remove('hidden'); return;
-            }
+            if (favoriteSongs.length === 0) { emptyFav.classList.remove('hidden'); return; }
             emptyFav.classList.add('hidden');
             
             favoriteSongs.forEach(song => {
-                const card = document.createElement('div');
-                card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group relative overflow-hidden';
-                card.onclick = () => openKaraoke(song.title, song.artist, song.previewUrl, song.artworkUrl);
-                card.innerHTML = `
-                    <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-700/50">
-                        <img src="${song.artworkUrl}" alt="${song.title}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play text-white text-xl"></i></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <h3 class="text-white font-bold truncate text-lg">${song.title}</h3>
-                        <p class="text-pink-400 text-sm truncate font-medium">${song.artist}</p>
-                    </div>
-                    <button class="absolute top-2 right-2 text-pink-500 text-xl p-2 z-20 hover:scale-125 transition-transform" onclick="event.stopPropagation(); removeFavorite('${song.id}')"><i class="fas fa-heart"></i></button>
-                `;
-                favGrid.appendChild(card);
+                const safeTitle = song.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeArtist = song.artist.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const onclickStr = `openKaraoke('${safeTitle}', '${safeArtist}', '${song.previewUrl}', '${song.artworkUrl}')`;
+                favList.innerHTML += generateListItemHTML(song.id, song.title, song.artist, song.artworkUrl, onclickStr, true);
             });
         }
 
@@ -432,26 +477,26 @@
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites', songId);
             const isFav = favoriteSongs.some(f => f.id === songId);
             
-            const favIcon = document.getElementById('fav-icon');
+            const favIcon = document.getElementById('p-fav-icon');
             favIcon.classList.add('scale-150');
             setTimeout(() => favIcon.classList.remove('scale-150'), 200);
 
             try {
                 if (isFav) await deleteDoc(docRef);
                 else await setDoc(docRef, { id: songId, ...currentPlayingSong });
-            } catch (error) { console.error(error); }
+            } catch (error) {}
         }
 
-        window.removeFavorite = async function(songId) {
+        async function removeFavorite(songId) {
             if (!currentUser) return;
             try { await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites', songId)); } catch (error) {}
-        };
+        }
 
         function updateFavoriteButtonUI() {
             if (!currentPlayingSong) return;
             const songId = `${currentPlayingSong.title}-${currentPlayingSong.artist}`.replace(/[^a-zA-Z0-9]/g, '');
             const isFav = favoriteSongs.some(f => f.id === songId);
-            const favIcon = document.getElementById('fav-icon');
+            const favIcon = document.getElementById('p-fav-icon');
             if (isFav) {
                 favIcon.classList.replace('far', 'fas');
                 favIcon.classList.add('text-pink-500');
@@ -460,19 +505,19 @@
                 favIcon.classList.remove('text-pink-500');
             }
         }
-        document.getElementById('fav-btn').addEventListener('click', toggleFavoriteCurrentSong);
 
         // ==========================================
-        // FUNGSI PENCARIAN & SPOTIFY
+        // FUNGSI PENCARIAN ITUNES
         // ==========================================
+        const searchInput = document.getElementById('search-input');
         if (searchInput) {
             searchInput.addEventListener('input', function (e) {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     if (searchInput.value.trim() !== '') searchSongs();
                     else {
-                        searchResultsSection.classList.add('hidden'); searchResultsSection.classList.remove('flex');
-                        if(!spotifyAccessToken) emptyState.classList.remove('hidden');
+                        document.getElementById('search-results-list').innerHTML = '';
+                        document.getElementById('search-empty').classList.remove('hidden');
                     }
                 }, 800);
             });
@@ -481,59 +526,45 @@
             });
         }
 
-        if (searchBtn) {
-            searchBtn.addEventListener('click', () => {
-                clearTimeout(searchTimeout); if (searchInput.value.trim() !== '') searchSongs();
-            });
-        }
-
         async function searchSongs() {
             const query = searchInput.value.trim();
             if (!query) return;
 
-            resultsGrid.innerHTML = '';
-            emptyState.classList.add('hidden');
-            searchResultsSection.classList.remove('hidden'); searchResultsSection.classList.add('flex');
-            loadingIndicator.classList.remove('hidden'); loadingIndicator.classList.add('flex');
+            const resList = document.getElementById('search-results-list');
+            const loading = document.getElementById('search-loading');
+            const empty = document.getElementById('search-empty');
+
+            resList.innerHTML = '';
+            empty.classList.add('hidden');
+            loading.classList.remove('hidden'); loading.classList.add('flex');
 
             try {
-                const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&country=id&media=music&entity=song&limit=15`);
+                const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&country=id&media=music&entity=song&limit=20`);
                 const data = await response.json();
-
-                loadingIndicator.classList.add('hidden'); loadingIndicator.classList.remove('flex');
+                loading.classList.add('hidden'); loading.classList.remove('flex');
 
                 if (!data.results || data.results.length === 0) {
-                    resultsGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 py-8"><i class="fas fa-search-minus text-4xl mb-2"></i><br>Lagu "${query}" tidak ditemukan.</div>`;
+                    resList.innerHTML = `<div class="text-center text-gray-500 py-8 text-sm">Lagu "${query}" tidak ditemukan.</div>`;
                     return;
                 }
 
                 data.results.forEach(song => {
                     const highResImage = song.artworkUrl100.replace('100x100bb', '600x600bb');
-                    const card = document.createElement('div');
-                    card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group hover:-translate-y-1';
-                    
                     const safeTitle = song.trackName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     const safeArtist = song.artistName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const onclickStr = `openKaraoke('${safeTitle}', '${safeArtist}', '${song.previewUrl}', '${highResImage}')`;
                     
-                    card.onclick = () => openKaraoke(safeTitle, safeArtist, song.previewUrl, highResImage);
-                    card.innerHTML = `
-                        <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-700/50">
-                            <img src="${song.artworkUrl100}" alt="${song.trackName}" class="w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play text-white text-xl"></i></div>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-white font-bold truncate text-lg">${song.trackName}</h3>
-                            <p class="text-purple-400 text-sm truncate">${song.artistName}</p>
-                        </div>
-                    `;
-                    resultsGrid.appendChild(card);
+                    resList.innerHTML += generateListItemHTML("", song.trackName, song.artistName, song.artworkUrl100, onclickStr, false);
                 });
             } catch (error) {
-                loadingIndicator.classList.add('hidden'); loadingIndicator.classList.remove('flex');
-                resultsGrid.innerHTML = `<div class="col-span-full text-center text-red-400 py-8"><i class="fas fa-wifi text-4xl mb-2"></i><br>Koneksi terputus. Gagal mencari lagu.</div>`;
+                loading.classList.add('hidden'); loading.classList.remove('flex');
+                resList.innerHTML = `<div class="text-center text-red-400 py-8 text-sm">Koneksi terputus. Gagal mencari.</div>`;
             }
         }
 
+        // ==========================================
+        // SPOTIFY
+        // ==========================================
         function handleSpotifyAuth() {
             const hash = window.location.hash;
             if (hash && hash.includes('access_token')) {
@@ -542,7 +573,7 @@
                 showSpotifyConnected();
             } else if (localStorage.getItem('spotify_fake_token')) {
                 spotifyAccessToken = localStorage.getItem('spotify_fake_token'); showSpotifyConnected();
-            } else { spotifyLoginBtn.classList.remove('hidden'); }
+            } else { document.getElementById('spotify-login-btn').classList.remove('hidden'); }
         }
 
         function loginSpotify() {
@@ -553,99 +584,123 @@
         }
 
         function showSpotifyConnected() {
-            spotifyLoginBtn.classList.add('hidden'); spotifyUserInfo.classList.remove('hidden');
-            spotifySection.classList.remove('hidden'); emptyState.classList.add('hidden'); fetchSpotifyTopTracks();
+            document.getElementById('spotify-login-btn').classList.add('hidden'); 
+            document.getElementById('spotify-user-info').classList.remove('hidden');
+            fetchSpotifyTopTracks();
         }
 
         async function fetchSpotifyTopTracks() {
-            spotifyLoading.classList.remove('hidden'); spotifyLoading.classList.add('flex');
+            const loading = document.getElementById('spotify-loading');
+            const list = document.getElementById('spotify-list');
+            loading.classList.remove('hidden'); loading.classList.add('flex');
+            list.innerHTML = '';
+
             if (spotifyAccessToken === 'demo_mode_active') {
                 setTimeout(() => {
                     const mockTracks = [
                         { name: "Sempurna", artist: "Andra & The Backbone", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" },
-                        { name: "R U Broken 2", artist: "BMTH", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" }
+                        { name: "R U Broken 2", artist: "BMTH", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" },
+                        { name: "Hati-Hati di Jalan", artist: "Tulus", img: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/80/c9/78/80c978b6-a0ea-7b18-e8cc-ab9e9e62fbb1/cover.jpg/600x600bb.jpg" }
                     ];
                     renderSpotifyCards(mockTracks);
                 }, 1000); return;
             }
+
+            try {
+                const res = await fetch('https://api.spotify.com/v1/me/top/tracks?limit=10&time_range=short_term', { headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }});
+                if (res.status === 401) { localStorage.removeItem('spotify_fake_token'); window.location.reload(); return; }
+                const data = await res.json();
+                const formattedTracks = data.items.map(track => ({ name: track.name, artist: track.artists[0].name, img: track.album.images[0]?.url || '' }));
+                renderSpotifyCards(formattedTracks);
+            } catch (err) {
+                loading.classList.add('hidden');
+                list.innerHTML = `<p class="text-red-400 text-center text-sm">Gagal memuat lagu Spotify.</p>`;
+            }
         }
 
         function renderSpotifyCards(tracks) {
-            spotifyLoading.classList.add('hidden'); spotifyLoading.classList.remove('flex');
+            document.getElementById('spotify-loading').classList.add('hidden'); 
+            document.getElementById('spotify-loading').classList.remove('flex');
+            const list = document.getElementById('spotify-list');
+            
             tracks.forEach(track => {
-                const card = document.createElement('div');
-                card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group hover:-translate-y-1 relative overflow-hidden';
                 const safeTitle = track.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const safeArtist = track.artist.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                card.onclick = () => openKaraoke(safeTitle, safeArtist, "", track.img);
-                card.innerHTML = `
-                    <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 z-10 border border-slate-700/50"><img src="${track.img}" class="w-full h-full object-cover"></div>
-                    <div class="flex-1 min-w-0 z-10"><h3 class="text-white font-bold truncate text-lg">${track.name}</h3><p class="text-green-400 text-sm truncate font-medium">${track.artist}</p></div>
-                `;
-                spotifyGrid.appendChild(card);
+                // Spotify click bridges to iTunes audio internally
+                const onclickStr = `playFromSpotify('${safeTitle}', '${safeArtist}', '${track.img}')`;
+                list.innerHTML += generateListItemHTML("", track.name, track.artist, track.img, onclickStr, false);
             });
+        }
+
+        async function playFromSpotify(title, artist, coverUrl) {
+            // Tampilkan Overlay Loading di layar utama
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML += `<div id="temp-bridging" class="absolute inset-0 bg-[#0b0f19]/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm"><i class="fas fa-circle-notch fa-spin text-4xl text-pink-500 mb-2"></i><p class="text-sm">Menyiapkan Lagu...</p></div>`;
+
+            try {
+                const searchQuery = `${title} ${artist}`;
+                const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&country=id&media=music&entity=song&limit=1`);
+                const data = await response.json();
+                let audioUrl = "";
+                
+                if (data.results && data.results.length > 0) audioUrl = data.results[0].previewUrl; 
+                else {
+                    const retryRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&country=id&media=music&entity=song&limit=1`);
+                    const retryData = await retryRes.json();
+                    if (retryData.results && retryData.results.length > 0) audioUrl = retryData.results[0].previewUrl;
+                }
+
+                document.getElementById('temp-bridging')?.remove();
+                if (audioUrl) openKaraoke(title, artist, audioUrl, coverUrl);
+                else alert(`Maaf, audio lagu "${title}" tidak ditemukan.`);
+            } catch (err) {
+                document.getElementById('temp-bridging')?.remove();
+                alert("Kesalahan jaringan.");
+            }
         }
 
         // ==========================================
         // YOUTUBE SMART SCRAPING & PLAYER MODE
         // ==========================================
-        
         async function findYoutubeVideo(query) {
-            // Metode terbaru: Scraping YouTube langsung lewat proxy untuk mencari ID Video
             const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-            
-            // 1. Coba Proxy Pertama (AllOrigins)
             try {
                 const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
                 const res = await fetch(proxyUrl);
                 if (res.ok) {
-                    const data = await res.json();
-                    const html = data.contents;
-                    // Mencari pola ID Video di dalam kode sumber YouTube
+                    const html = (await res.json()).contents;
                     const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
                     if (match) return match[1];
                 }
-            } catch (e) {
-                console.warn("Proxy 1 (AllOrigins) diblokir.");
-            }
+            } catch (e) {}
 
-            // 2. Coba Proxy Kedua (CodeTabs) sebagai cadangan
             try {
                 const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`;
                 const res = await fetch(proxyUrl);
                 if (res.ok) {
-                    const html = await res.text();
-                    const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+                    const match = (await res.text()).match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
                     if (match) return match[1];
                 }
-            } catch (e) {
-                console.warn("Proxy 2 (CodeTabs) diblokir.");
-            }
-
-            // Jika semua gagal, kembalikan null agar tombol fallback ("Buka di YouTube") muncul
+            } catch (e) {}
             return null;
         }
 
         async function loadYtVideo(query) {
             lastYtQuery = query;
-            const ytIframe = document.getElementById('yt-iframe');
-            const ytLoading = document.getElementById('yt-loading');
-            const ytError = document.getElementById('yt-error');
-            const ytFallbackLink = document.getElementById('yt-fallback-link'); // Tombol merah ke YouTube
+            const ytIframe = document.getElementById('p-yt-iframe');
+            const ytLoading = document.getElementById('p-yt-loading');
+            const ytError = document.getElementById('p-yt-error');
+            const ytFallbackLink = document.getElementById('p-yt-fallback'); 
 
-            ytIframe.src = ""; // Bersihkan video lama
+            ytIframe.src = ""; 
             ytLoading.classList.remove('hidden'); ytLoading.classList.add('flex');
             ytError.classList.add('hidden'); ytError.classList.remove('flex');
 
             const videoId = await findYoutubeVideo(query);
-
             ytLoading.classList.add('hidden'); ytLoading.classList.remove('flex');
 
-            if (videoId) {
-                // Tampilkan video jika dapat ID-nya!
-                ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-            } else {
-                // Tampilkan pesan error dan siapkan link untuk buka di tab baru jika mentok
+            if (videoId) ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1`;
+            else {
                 ytFallbackLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
                 ytError.classList.remove('hidden'); ytError.classList.add('flex');
             }
@@ -653,68 +708,72 @@
 
         function setPlayerMode(mode) {
             currentMode = mode;
-            const ytContainer = document.getElementById('yt-container');
-            const itunesContainer = document.getElementById('itunes-container');
+            const ytWrapper = document.getElementById('p-yt-wrapper');
+            const audioWrapper = document.getElementById('p-audio-wrapper');
+            const audioControls = document.getElementById('p-audio-controls');
             const btnYt = document.getElementById('mode-yt-btn');
             const btnItunes = document.getElementById('mode-itunes-btn');
+            const audioEl = document.getElementById('p-audio-element');
 
             if (mode === 'youtube') {
-                audioPlayer.pause(); // Matikan audio preview iTunes
-                ytContainer.classList.remove('hidden');
-                itunesContainer.classList.add('hidden');
-                itunesContainer.classList.remove('flex');
+                audioEl.pause(); 
+                ytWrapper.classList.remove('hidden');
+                audioWrapper.classList.add('hidden'); audioWrapper.classList.remove('flex');
+                audioControls.classList.add('hidden'); audioControls.classList.remove('flex');
                 
-                btnYt.classList.replace('bg-slate-800', 'bg-red-600');
-                btnYt.classList.replace('text-gray-400', 'text-white');
-                btnYt.classList.add('shadow-lg');
-                btnYt.classList.remove('border', 'border-slate-700');
+                btnYt.classList.replace('bg-white/10', 'bg-pink-500');
+                btnYt.classList.replace('text-gray-300', 'text-white');
+                btnYt.classList.replace('border-white/10', 'border-pink-400');
                 
-                btnItunes.classList.remove('bg-purple-600', 'shadow-lg', 'text-white');
-                btnItunes.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
+                btnItunes.classList.replace('bg-pink-500', 'bg-white/10');
+                btnItunes.classList.replace('text-white', 'text-gray-300');
+                btnItunes.classList.replace('border-pink-400', 'border-white/10');
             } else {
-                // Mode iTunes
-                document.getElementById('yt-iframe').src = document.getElementById('yt-iframe').src; // Pause YT video
-                ytContainer.classList.add('hidden');
-                itunesContainer.classList.remove('hidden');
-                itunesContainer.classList.add('flex');
+                document.getElementById('p-yt-iframe').src = document.getElementById('p-yt-iframe').src; // Pause YT
+                ytWrapper.classList.add('hidden');
+                audioWrapper.classList.remove('hidden'); audioWrapper.classList.add('flex');
+                audioControls.classList.remove('hidden'); audioControls.classList.add('flex');
                 
-                btnItunes.classList.replace('bg-slate-800', 'bg-purple-600');
-                btnItunes.classList.replace('text-gray-400', 'text-white');
-                btnItunes.classList.add('shadow-lg');
-                btnItunes.classList.remove('border', 'border-slate-700');
+                btnItunes.classList.replace('bg-white/10', 'bg-pink-500');
+                btnItunes.classList.replace('text-gray-300', 'text-white');
+                btnItunes.classList.replace('border-white/10', 'border-pink-400');
 
-                btnYt.classList.remove('bg-red-600', 'shadow-lg', 'text-white');
-                btnYt.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
-            }
-            
-            if(isMicActive && audioContext) {
-                kArtwork.style.boxShadow = 'none';
-                ytContainer.style.boxShadow = 'none';
+                btnYt.classList.replace('bg-pink-500', 'bg-white/10');
+                btnYt.classList.replace('text-white', 'text-gray-300');
+                btnYt.classList.replace('border-pink-400', 'border-white/10');
             }
         }
 
+        // ==========================================
+        // OPEN / CLOSE KARAOKE APP VIEW
+        // ==========================================
         function openKaraoke(title, artist, previewUrl, artworkUrl) {
-            searchPage.classList.add('hidden');
-            karaokePage.classList.remove('hidden');
-            karaokePage.classList.add('flex');
+            const playerScreen = document.getElementById('player-screen');
+            const audioEl = document.getElementById('p-audio-element');
+            
+            // Animasi masuk layar
+            playerScreen.classList.remove('translate-y-full');
+            playerScreen.classList.add('translate-y-0');
 
             if (isMicActive) toggleMic();
 
             currentPlayingSong = { title, artist, previewUrl, artworkUrl };
             updateFavoriteButtonUI();
 
-            kTitle.textContent = title;
-            kArtist.textContent = artist;
-            kArtwork.src = artworkUrl;
+            // Set Data Tampilan
+            document.getElementById('p-title').textContent = title;
+            document.getElementById('p-artist').textContent = artist;
+            document.getElementById('p-artwork').src = artworkUrl;
+            document.getElementById('p-bg-blur').style.backgroundImage = `url('${artworkUrl}')`;
             
-            audioPlayer.src = previewUrl;
-            audioPlayer.load();
-            lyricsContainer.innerHTML = '';
-            kArtwork.classList.remove('spin');
-            progressFill.style.width = '0%';
-            currentTimeEl.textContent = '0:00';
+            // Set Audio
+            audioEl.src = previewUrl;
+            audioEl.load();
+            document.getElementById('p-lyrics-text').innerHTML = '';
+            document.getElementById('p-time-current').textContent = '0:00';
+            document.getElementById('p-progress-fill').style.width = '0%';
+            document.getElementById('p-artwork').parentElement.classList.remove('spin');
 
-            // SETUP YOUTUBE KARAOKE (Pencarian Otomatis Spesifik)
             const ytSearchQuery = `${title} ${artist} karaoke instrumental`;
             loadYtVideo(ytSearchQuery);
             
@@ -723,60 +782,71 @@
         }
 
         function closeKaraoke() {
-            audioPlayer.pause();
-            audioPlayer.src = "";
-            document.getElementById('yt-iframe').src = ""; 
-            kArtwork.classList.remove('spin');
+            const playerScreen = document.getElementById('player-screen');
+            const audioEl = document.getElementById('p-audio-element');
+
+            audioEl.pause();
+            audioEl.src = "";
+            document.getElementById('p-yt-iframe').src = ""; 
             
             if (isMicActive) toggleMic(); 
 
-            karaokePage.classList.add('hidden');
-            karaokePage.classList.remove('flex');
-            searchPage.classList.remove('hidden');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Animasi keluar
+            playerScreen.classList.remove('translate-y-0');
+            playerScreen.classList.add('translate-y-full');
         }
 
         // ==========================================
         // KONTROL AUDIO PLAYER (ITUNES)
         // ==========================================
-        audioPlayer.addEventListener('play', () => { kArtwork.classList.add('spin'); playIcon.classList.replace('fa-play', 'fa-pause'); });
-        audioPlayer.addEventListener('pause', () => { kArtwork.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); });
-        audioPlayer.addEventListener('ended', () => { kArtwork.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); });
-        audioPlayer.addEventListener('timeupdate', () => {
-            const current = audioPlayer.currentTime; const duration = audioPlayer.duration || 30;
-            currentTimeEl.textContent = `${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`;
-            progressFill.style.width = `${(current / duration) * 100}%`;
+        const audioEl = document.getElementById('p-audio-element');
+        const playIcon = document.getElementById('p-play-icon');
+        const artworkSpin = document.getElementById('p-artwork').parentElement;
+
+        audioEl.addEventListener('play', () => { artworkSpin.classList.add('spin'); playIcon.classList.replace('fa-play', 'fa-pause'); playIcon.classList.remove('ml-1'); });
+        audioEl.addEventListener('pause', () => { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); playIcon.classList.add('ml-1'); });
+        audioEl.addEventListener('ended', () => { artworkSpin.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); playIcon.classList.add('ml-1'); });
+        
+        audioEl.addEventListener('timeupdate', () => {
+            const current = audioEl.currentTime; const duration = audioEl.duration || 30;
+            document.getElementById('p-time-current').textContent = `${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`;
+            document.getElementById('p-progress-fill').style.width = `${(current / duration) * 100}%`;
         });
-        audioPlayer.addEventListener('loadedmetadata', () => {
-            if(audioPlayer.duration && !isNaN(audioPlayer.duration) && audioPlayer.duration !== Infinity) {
-                durationTimeEl.textContent = `${Math.floor(audioPlayer.duration / 60)}:${Math.floor(audioPlayer.duration % 60).toString().padStart(2, '0')}`;
+        
+        audioEl.addEventListener('loadedmetadata', () => {
+            if(audioEl.duration && !isNaN(audioEl.duration) && audioEl.duration !== Infinity) {
+                document.getElementById('p-time-duration').textContent = `${Math.floor(audioEl.duration / 60)}:${Math.floor(audioEl.duration % 60).toString().padStart(2, '0')}`;
             }
         });
 
-        function togglePlayPause() { if (audioPlayer.paused) audioPlayer.play(); else audioPlayer.pause(); }
+        function togglePlayPause() { if (audioEl.paused) audioEl.play(); else audioEl.pause(); }
         function seekAudio(e) {
-            const rect = progressBarContainer.getBoundingClientRect();
-            audioPlayer.currentTime = ((e.clientX - rect.left) / rect.width) * (audioPlayer.duration || 30);
+            const rect = document.getElementById('p-progress-bg').getBoundingClientRect();
+            audioEl.currentTime = ((e.clientX - rect.left) / rect.width) * (audioEl.duration || 30);
         }
 
         // ==========================================
-        // FUNGSI LIRIK & IMMERSIVE MIC
+        // FUNGSI LIRIK AI & GAMING MIC
         // ==========================================
         function displayLyrics(lyricsText) {
             let cleanLyrics = lyricsText.replace(/Paroles de la chanson.*\n/ig, '');
             currentLyricsArray = cleanLyrics.split('\n').filter(line => line.trim() !== '');
             let formattedLyrics = '';
             currentLyricsArray.forEach((line, index) => {
-                formattedLyrics += `<div id="lyric-${index}" class="lyric-line py-2 text-gray-400 hover:text-white cursor-pointer" onclick="manualSync(${index})">${line}</div>`;
+                formattedLyrics += `<div id="lyric-${index}" class="lyric-line py-3 text-white/50 cursor-pointer" onclick="manualSync(${index})">${line}</div>`;
             });
-            lyricsContainer.innerHTML = formattedLyrics;
-            lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
+            document.getElementById('p-lyrics-text').innerHTML = formattedLyrics;
+            document.getElementById('p-lyrics-loading').classList.add('hidden'); 
+            document.getElementById('p-lyrics-loading').classList.remove('flex');
+            
+            // Sorot lirik pertama
+            setTimeout(() => manualSync(0), 500);
         }
 
         async function fetchLyricsWithAI(artist, title) {
-            lyricsLoading.classList.remove('hidden'); lyricsLoading.classList.add('flex');
-            lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Mencari lirik lagu...</p>';
+            const loading = document.getElementById('p-lyrics-loading');
+            loading.classList.remove('hidden'); loading.classList.add('flex');
+            loading.querySelector('p').textContent = "Mencari lirik di database...";
 
             try {
                 const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
@@ -791,6 +861,8 @@
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             const prompt = `Berikan lirik lagu lengkap untuk lagu berjudul "${title}" yang dinyanyikan oleh "${artist}". Hanya berikan teks liriknya saja. Jangan tambahkan intro, outro, atau teks percakapan apapun. Jika kamu benar-benar tidak tahu liriknya, balas dengan "Maaf, lirik tidak ditemukan."`;
 
+            loading.querySelector('p').textContent = "AI sedang menyusun lirik...";
+
             for (let i = 0; i < 3; i++) {
                 try {
                     const response = await fetch(url, {
@@ -802,33 +874,37 @@
                     let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (lyricsText && !lyricsText.includes("Maaf, lirik tidak ditemukan")) displayLyrics(lyricsText);
                     else {
-                        lyricsContainer.innerHTML = '<p class="text-red-400 mt-20">Maaf Ozza, lirik tidak ditemukan.</p>';
-                        lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
+                        document.getElementById('p-lyrics-text').innerHTML = '<p class="text-white mt-20">Lirik tidak ditemukan.</p>';
+                        loading.classList.add('hidden'); loading.classList.remove('flex');
                     }
                     return; 
                 } catch (error) {
                     if (i === 2) {
-                        lyricsContainer.innerHTML = `<p class="text-yellow-400 mt-16 px-6 text-sm">Gagal memanggil AI untuk lirik. Coba lagi nanti.</p>`;
-                        lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
+                        document.getElementById('p-lyrics-text').innerHTML = `<p class="text-white mt-16 px-6 text-sm">Gagal memuat lirik AI.</p>`;
+                        loading.classList.add('hidden'); loading.classList.remove('flex');
                     } else await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
                 }
             }
         }
 
-        async function toggleMic() {
-            const micBtn = document.getElementById('mic-btn');
-            const micIcon = document.getElementById('mic-icon');
-            const micText = document.getElementById('mic-text');
+        function manualSync(index) {
+            document.querySelectorAll('.lyric-line').forEach(el => {
+                el.classList.remove('lyric-active');
+            });
+            const activeLine = document.getElementById(`lyric-${index}`);
+            if (activeLine) {
+                activeLine.classList.add('lyric-active');
+                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
 
+        async function toggleMic() {
+            const micBtn = document.getElementById('p-mic-btn');
+            
             if (isMicActive) {
                 isMicActive = false;
-                micBtn.classList.replace('bg-purple-600', 'bg-slate-700');
-                micIcon.classList.replace('fa-microphone', 'fa-microphone-slash');
-                micText.textContent = 'Aktifkan Mic (Sinkron Efek Lampu Studio)';
-                document.getElementById('yt-container').style.boxShadow = '0 0 30px rgba(239,68,68,0.2)';
-                kArtwork.style.boxShadow = '0 0 30px rgba(168,85,247,0.4)'; 
-
-                if (recognition) recognition.stop();
+                micBtn.classList.remove('shadow-[0_0_40px_rgba(236,72,153,1)]', 'scale-110');
+                
                 if (mediaStream) mediaStream.getTracks().forEach(track => track.stop());
                 if (audioContext) audioContext.close();
                 return;
@@ -837,12 +913,9 @@
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 isMicActive = true;
-                micBtn.classList.replace('bg-slate-700', 'bg-purple-600');
-                micIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
-                micText.textContent = 'Mic Aktif (Suara Terekam!)';
-
+                micBtn.classList.add('shadow-[0_0_40px_rgba(236,72,153,1)]', 'scale-110');
                 setupVisualizer(mediaStream);
-            } catch (err) { alert("Gagal mengakses Mikrofon. Pastikan kamu memberi izin ya!"); }
+            } catch (err) { alert("Gagal mengakses Mikrofon. Beri izin di browsermu!"); }
         }
 
         function setupVisualizer(stream) {
@@ -863,29 +936,11 @@
                 for (let i = 0; i < array.length; i++) { values += (array[i]); }
                 const average = values / array.length;
                 
-                const glowBase = 30 + (average * 2);
-                
-                if (currentMode === 'youtube') {
-                    document.getElementById('yt-container').style.boxShadow = `0 0 ${glowBase}px rgba(239, 68, 68, ${0.4 + (average/200)})`;
-                    kArtwork.style.boxShadow = 'none';
-                } else {
-                    kArtwork.style.boxShadow = `0 0 ${glowBase}px rgba(168, 85, 247, ${0.4 + (average/200)})`;
-                    document.getElementById('yt-container').style.boxShadow = 'none';
-                }
+                // Efek denyut lampu neon dari Mic ke Layar Background
+                const blurBg = document.getElementById('p-bg-blur');
+                blurBg.style.opacity = 0.3 + (average / 300);
+                blurBg.style.filter = `blur(${40 - (average/10)}px)`;
             };
-        }
-
-        function manualSync(index) {
-            document.querySelectorAll('.lyric-line').forEach(el => {
-                el.classList.remove('lyric-active', 'text-white');
-                el.classList.add('text-gray-400');
-            });
-            const activeLine = document.getElementById(`lyric-${index}`);
-            if (activeLine) {
-                activeLine.classList.remove('text-gray-400');
-                activeLine.classList.add('lyric-active', 'text-white');
-                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
         }
     </script>
 </body>
