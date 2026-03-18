@@ -161,31 +161,45 @@
 
         <div class="glass-panel w-full rounded-3xl p-6 md:p-10 flex flex-col items-center shadow-2xl relative overflow-hidden">
             
-            <!-- Album Art & Info -->
-            <div class="flex flex-col md:flex-row items-center gap-8 w-full mb-8">
+            <!-- Judul Lagu & Favorit -->
+            <div class="flex items-start justify-between w-full mb-6">
+                <div class="flex-1 pr-4 text-center md:text-left">
+                    <h2 id="k-title" class="text-3xl md:text-4xl font-bold text-white mb-2 line-clamp-2">Judul Lagu</h2>
+                    <p id="k-artist" class="text-xl text-purple-300">Nama Artis</p>
+                </div>
+                <button id="fav-btn" class="text-slate-400 hover:text-pink-500 transition-colors text-3xl mt-2 group cursor-pointer" title="Simpan ke Favorit">
+                    <i class="far fa-heart transition-transform group-hover:scale-110" id="fav-icon"></i>
+                </button>
+            </div>
+
+            <!-- Toggles for Player Mode -->
+            <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-6 w-full">
+                <button id="mode-yt-btn" onclick="setPlayerMode('youtube')" class="px-6 py-2.5 rounded-full bg-red-600 text-white shadow-lg transition-all flex items-center gap-2 text-sm font-bold">
+                    <i class="fab fa-youtube text-lg"></i> Full Instrumental (YouTube)
+                </button>
+                <button id="mode-itunes-btn" onclick="setPlayerMode('itunes')" class="px-6 py-2.5 rounded-full bg-slate-800 text-gray-400 hover:text-white border border-slate-700 transition-all flex items-center gap-2 text-sm font-bold">
+                    <i class="fab fa-apple text-lg"></i> Preview Lagu Asli 30s
+                </button>
+            </div>
+
+            <!-- PLAYER 1: YOUTUBE FULL KARAOKE (BARU) -->
+            <div id="yt-container" class="w-full aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.2)] mb-8 border-2 border-slate-700 bg-black relative">
+                <iframe id="yt-iframe" class="w-full h-full absolute inset-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <!-- PLAYER 2: ITUNES PREVIEW (LAMA) -->
+            <div id="itunes-container" class="hidden flex-col md:flex-row items-center gap-8 w-full mb-8">
                 <div class="relative w-48 h-48 md:w-56 md:h-56 shrink-0 rounded-full border-4 border-purple-500/30 overflow-hidden shadow-[0_0_30px_rgba(168,85,247,0.4)]">
                     <img id="k-artwork" src="" alt="Album Art" class="w-full h-full object-cover">
                     <!-- Titik tengah piringan hitam -->
                     <div class="absolute inset-0 m-auto w-8 h-8 bg-slate-900 rounded-full border-2 border-slate-700"></div>
                 </div>
-                
-                <div class="text-center md:text-left flex-1 w-full">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1 pr-4">
-                            <h2 id="k-title" class="text-3xl md:text-4xl font-bold text-white mb-2 line-clamp-2">Judul Lagu</h2>
-                            <p id="k-artist" class="text-xl text-purple-300 mb-6">Nama Artis</p>
-                        </div>
-                        <button id="fav-btn" class="text-slate-400 hover:text-pink-500 transition-colors text-3xl mt-2 group cursor-pointer" title="Simpan ke Favorit">
-                            <i class="far fa-heart transition-transform group-hover:scale-110" id="fav-icon"></i>
-                        </button>
-                    </div>
-                    
+                <div class="flex-1 w-full">
                     <!-- Audio Player -->
                     <div class="w-full flex flex-col gap-2">
                         <audio id="audio-player" class="hidden">
                             <source id="audio-source" src="" type="audio/mpeg">
                         </audio>
-                        
                         <!-- Custom Player UI -->
                         <div class="flex items-center gap-4 bg-slate-800/80 p-3 rounded-full border border-slate-600 shadow-inner">
                             <button id="play-pause-btn" onclick="togglePlayPause()" class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white hover:scale-105 transition-transform shadow-[0_0_15px_rgba(168,85,247,0.6)] shrink-0 cursor-pointer">
@@ -209,7 +223,7 @@
             <div class="w-full flex justify-center mb-6 border-b border-slate-700/50 pb-6">
                 <button id="mic-btn" onclick="toggleMic()" class="bg-slate-700 hover:bg-purple-600 text-white px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-3 shadow-lg cursor-pointer">
                     <i class="fas fa-microphone-slash" id="mic-icon"></i> 
-                    <span id="mic-text">Aktifkan Mic (Sync Lirik & Efek Suara)</span>
+                    <span id="mic-text">Aktifkan Mic (Sinkron Efek Lampu Studio)</span>
                 </button>
             </div>
 
@@ -217,14 +231,14 @@
             <div class="w-full mt-4">
                 <div class="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-2">
                     <h3 class="text-xl font-semibold text-white flex items-center gap-2">
-                        <i class="fas fa-align-left text-pink-500"></i> Lirik Lagu
+                        <i class="fas fa-align-left text-pink-500"></i> Lirik AI (Untuk Panduan)
                     </h3>
                     <div id="lyrics-loading" class="text-sm text-pink-400 hidden items-center gap-2">
                         <i class="fas fa-spinner fa-spin"></i> Memuat lirik...
                     </div>
                 </div>
                 
-                <div id="lyrics-container" class="lyrics-box w-full h-[400px] overflow-y-auto bg-slate-900/60 rounded-2xl p-6 text-center text-lg md:text-2xl leading-relaxed font-medium text-gray-200 shadow-inner">
+                <div id="lyrics-container" class="lyrics-box w-full h-[300px] overflow-y-auto bg-slate-900/60 rounded-2xl p-6 text-center text-lg md:text-xl leading-relaxed font-medium text-gray-200 shadow-inner">
                     <!-- Lirik akan dimuat di sini -->
                 </div>
             </div>
@@ -239,7 +253,7 @@
         // ==========================================
         // KONFIGURASI API
         // ==========================================
-        const apiKey = "AIzaSyAqkCqh7wOfdkBYpNTrkZZOJfeRMnBfwDI"; // API Key Gemini
+        const apiKey = "AIzaSyAqkCqh7wOfdkBYpNTrkZZOJfeRMnBfwDI"; // API Key Gemini Ozza
         
         // --- KONFIGURASI SPOTIFY ---
         const SPOTIFY_CLIENT_ID = ""; 
@@ -254,6 +268,7 @@
                 throw new Error("Local environment");
             }
         } catch(e) {
+            // FIREBASE OZZA
             firebaseConfig = {
                 apiKey: "AIzaSyD_oQ4qkT4iVAxw0oQ6eQYtAttj_ggxY_0",
                 authDomain: "karaokemen-b06e3.firebaseapp.com",
@@ -306,6 +321,9 @@
         const spotifyGrid = document.getElementById('spotify-grid');
         const spotifyLoading = document.getElementById('spotify-loading');
 
+        // Mode Player
+        let currentMode = 'youtube'; // Default ke YouTube Full Karaoke
+
         let isMicActive = false;
         let recognition = null;
         let audioContext = null;
@@ -321,9 +339,10 @@
         window.seekAudio = seekAudio;
         window.toggleMic = toggleMic;
         window.manualSync = manualSync;
+        window.setPlayerMode = setPlayerMode;
 
         // ==========================================
-        // INITIALIZATION, SPOTIFY AUTH & FIREBASE AUTH
+        // INITIALIZATION
         // ==========================================
         window.onload = () => {
             initFirebaseAuth();
@@ -337,34 +356,25 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch(e) {
-                console.error("Gagal koneksi autentikasi Firebase:", e);
-            }
+            } catch(e) { console.error("Firebase auth fail", e); }
         }
 
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
-            if (user) {
-                loadFavoritesFromFirebase();
-            }
+            if (user) loadFavoritesFromFirebase();
         });
 
         // ==========================================
-        // FUNGSI FIREBASE (LAGU FAVORIT)
+        // FUNGSI FIREBASE FAVORIT
         // ==========================================
         function loadFavoritesFromFirebase() {
             if (!currentUser) return;
             const favRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites');
-            
             onSnapshot(favRef, (snapshot) => {
                 favoriteSongs = [];
-                snapshot.forEach(doc => {
-                    favoriteSongs.push({ id: doc.id, ...doc.data() });
-                });
+                snapshot.forEach(doc => { favoriteSongs.push({ id: doc.id, ...doc.data() }); });
                 renderFavorites();
                 updateFavoriteButtonUI();
-            }, (error) => {
-                console.error("Gagal memuat favorit dari database:", error);
             });
         }
 
@@ -374,32 +384,24 @@
             favGrid.innerHTML = '';
             
             if (favoriteSongs.length === 0) {
-                emptyFav.classList.remove('hidden');
-                return;
+                emptyFav.classList.remove('hidden'); return;
             }
-            
             emptyFav.classList.add('hidden');
             
             favoriteSongs.forEach(song => {
                 const card = document.createElement('div');
                 card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group relative overflow-hidden';
-                
                 card.onclick = () => openKaraoke(song.title, song.artist, song.previewUrl, song.artworkUrl);
-
                 card.innerHTML = `
                     <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-700/50">
                         <img src="${song.artworkUrl}" alt="${song.title}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i class="fas fa-play text-white text-xl"></i>
-                        </div>
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play text-white text-xl"></i></div>
                     </div>
                     <div class="flex-1 min-w-0">
                         <h3 class="text-white font-bold truncate text-lg">${song.title}</h3>
                         <p class="text-pink-400 text-sm truncate font-medium">${song.artist}</p>
                     </div>
-                    <button class="absolute top-2 right-2 text-pink-500 text-xl p-2 z-20 hover:scale-125 transition-transform" onclick="event.stopPropagation(); removeFavorite('${song.id}')" title="Hapus dari Favorit">
-                        <i class="fas fa-heart"></i>
-                    </button>
+                    <button class="absolute top-2 right-2 text-pink-500 text-xl p-2 z-20 hover:scale-125 transition-transform" onclick="event.stopPropagation(); removeFavorite('${song.id}')"><i class="fas fa-heart"></i></button>
                 `;
                 favGrid.appendChild(card);
             });
@@ -407,10 +409,8 @@
 
         async function toggleFavoriteCurrentSong() {
             if (!currentUser || !currentPlayingSong) return;
-            
             const songId = `${currentPlayingSong.title}-${currentPlayingSong.artist}`.replace(/[^a-zA-Z0-9]/g, '');
             const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites', songId);
-            
             const isFav = favoriteSongs.some(f => f.id === songId);
             
             const favIcon = document.getElementById('fav-icon');
@@ -418,24 +418,14 @@
             setTimeout(() => favIcon.classList.remove('scale-150'), 200);
 
             try {
-                if (isFav) {
-                    await deleteDoc(docRef);
-                } else {
-                    await setDoc(docRef, { id: songId, ...currentPlayingSong });
-                }
-            } catch (error) {
-                console.error("Gagal mengubah status favorit:", error);
-            }
+                if (isFav) await deleteDoc(docRef);
+                else await setDoc(docRef, { id: songId, ...currentPlayingSong });
+            } catch (error) { console.error(error); }
         }
 
         window.removeFavorite = async function(songId) {
             if (!currentUser) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites', songId);
-                await deleteDoc(docRef);
-            } catch (error) {
-                console.error("Gagal menghapus favorit:", error);
-            }
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'favorites', songId)); } catch (error) {}
         };
 
         function updateFavoriteButtonUI() {
@@ -443,7 +433,6 @@
             const songId = `${currentPlayingSong.title}-${currentPlayingSong.artist}`.replace(/[^a-zA-Z0-9]/g, '');
             const isFav = favoriteSongs.some(f => f.id === songId);
             const favIcon = document.getElementById('fav-icon');
-            
             if (isFav) {
                 favIcon.classList.replace('far', 'fas');
                 favIcon.classList.add('text-pink-500');
@@ -452,228 +441,47 @@
                 favIcon.classList.remove('text-pink-500');
             }
         }
-        
         document.getElementById('fav-btn').addEventListener('click', toggleFavoriteCurrentSong);
 
-        function handleSpotifyAuth() {
-            const hash = window.location.hash;
-            if (hash && hash.includes('access_token')) {
-                const urlParams = new URLSearchParams(hash.substring(1));
-                spotifyAccessToken = urlParams.get('access_token');
-                
-                window.history.pushState("", document.title, window.location.pathname + window.location.search);
-                
-                showSpotifyConnected();
-            } else if (localStorage.getItem('spotify_fake_token')) {
-                spotifyAccessToken = localStorage.getItem('spotify_fake_token');
-                showSpotifyConnected();
-            } else {
-                spotifyLoginBtn.classList.remove('hidden');
-            }
-        }
-
-        function loginSpotify() {
-            if (!SPOTIFY_CLIENT_ID) {
-                console.log("Menjalankan Mode Simulasi Spotify karena Client ID kosong.");
-                localStorage.setItem('spotify_fake_token', 'demo_mode_active');
-                handleSpotifyAuth();
-                return;
-            }
-
-            const scopes = 'user-top-read';
-            const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
-            window.location.href = authUrl;
-        }
-
-        function showSpotifyConnected() {
-            spotifyLoginBtn.classList.add('hidden');
-            spotifyUserInfo.classList.remove('hidden');
-            spotifySection.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-            fetchSpotifyTopTracks();
-        }
-
-        async function fetchSpotifyTopTracks() {
-            spotifyLoading.classList.remove('hidden');
-            spotifyLoading.classList.add('flex');
-            spotifyGrid.innerHTML = '';
-
-            if (spotifyAccessToken === 'demo_mode_active') {
-                setTimeout(() => {
-                    const mockTracks = [
-                        { name: "Sempurna", artist: "Andra & The Backbone", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" },
-                        { name: "Hati-Hati di Jalan", artist: "Tulus", img: "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/80/c9/78/80c978b6-a0ea-7b18-e8cc-ab9e9e62fbb1/cover.jpg/600x600bb.jpg" },
-                        { name: "Sial", artist: "Mahalini", img: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/f5/ba/47/f5ba476a-bb91-ce13-db37-017e813a20d6/cover.jpg/600x600bb.jpg" },
-                        { name: "Yellow", artist: "Coldplay", img: "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/21/2b/8d/212b8de4-f6fc-1793-61fc-32128e4e94b1/825646142755.jpg/600x600bb.jpg" },
-                        { name: "Kangen", artist: "Dewa 19", img: "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ce/27/c2/ce27c2f0-15bd-cc22-3cd2-9bcaab40ce04/886445580665.jpg/600x600bb.jpg" },
-                        { name: "Die With A Smile", artist: "Lady Gaga, Bruno Mars", img: "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/71/84/c6/7184c62c-8cd2-78d1-f2f6-3d2b2734490c/24UM1IM11060.rgb.jpg/600x600bb.jpg" }
-                    ];
-                    renderSpotifyCards(mockTracks);
-                }, 1000);
-                return;
-            }
-
-            try {
-                const res = await fetch('https://api.spotify.com/v1/me/top/tracks?limit=6&time_range=short_term', {
-                    headers: { 'Authorization': `Bearer ${spotifyAccessToken}` }
-                });
-                
-                if (res.status === 401) {
-                    localStorage.removeItem('spotify_fake_token');
-                    window.location.reload();
-                    return;
-                }
-
-                const data = await res.json();
-                
-                const formattedTracks = data.items.map(track => ({
-                    name: track.name,
-                    artist: track.artists[0].name,
-                    img: track.album.images[0]?.url || ''
-                }));
-
-                renderSpotifyCards(formattedTracks);
-
-            } catch (err) {
-                console.error("Gagal mengambil lagu Spotify:", err);
-                spotifyLoading.classList.add('hidden');
-                spotifyGrid.innerHTML = `<p class="text-red-400 col-span-full text-center">Gagal memuat daftar lagu dari Spotify.</p>`;
-            }
-        }
-
-        function renderSpotifyCards(tracks) {
-            spotifyLoading.classList.add('hidden');
-            spotifyLoading.classList.remove('flex');
-            
-            tracks.forEach(track => {
-                const card = document.createElement('div');
-                card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group hover:-translate-y-1 relative overflow-hidden';
-                
-                const safeTitle = track.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const safeArtist = track.artist.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                const safeImg = track.img.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                
-                card.onclick = () => playFromSpotify(safeTitle, safeArtist, safeImg);
-
-                card.innerHTML = `
-                    <div class="absolute -right-2 -bottom-2 opacity-10 text-green-500">
-                        <i class="fab fa-spotify text-6xl"></i>
-                    </div>
-                    <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 z-10 border border-slate-700/50">
-                        <img src="${track.img}" alt="${track.name}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i class="fas fa-play text-white text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="flex-1 min-w-0 z-10">
-                        <h3 class="text-white font-bold truncate text-lg">${track.name}</h3>
-                        <p class="text-green-400 text-sm truncate font-medium">${track.artist}</p>
-                    </div>
-                `;
-                spotifyGrid.appendChild(card);
-            });
-        }
-
         // ==========================================
-        // FITUR BRIDGING (SPOTIFY -> ITUNES AUDIO)
-        // ==========================================
-        async function playFromSpotify(title, artist, coverUrl) {
-            searchPage.classList.add('hidden');
-            karaokePage.classList.remove('hidden');
-            karaokePage.classList.add('flex');
-            bridgeLoading.classList.remove('hidden');
-            bridgeLoading.classList.add('flex');
-
-            try {
-                const searchQuery = `${title} ${artist}`;
-                const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&country=id&media=music&entity=song&limit=1`);
-                const data = await response.json();
-
-                let audioUrl = "";
-                
-                if (data.results && data.results.length > 0) {
-                    audioUrl = data.results[0].previewUrl; 
-                } else {
-                    const retryRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&country=id&media=music&entity=song&limit=1`);
-                    const retryData = await retryRes.json();
-                    if (retryData.results && retryData.results.length > 0) {
-                        audioUrl = retryData.results[0].previewUrl;
-                    }
-                }
-
-                bridgeLoading.classList.add('hidden');
-                bridgeLoading.classList.remove('flex');
-
-                if (audioUrl) {
-                    openKaraoke(title, artist, audioUrl, coverUrl);
-                } else {
-                    alert(`Maaf, audio preview untuk lagu "${title}" tidak ditemukan di database global.`);
-                    closeKaraoke();
-                }
-            } catch (err) {
-                console.error(err);
-                bridgeLoading.classList.add('hidden');
-                bridgeLoading.classList.remove('flex');
-                alert("Terjadi kesalahan jaringan saat mengambil audio.");
-                closeKaraoke();
-            }
-        }
-
-        // ==========================================
-        // EVENT LISTENERS PENCARIAN UTAMA
+        // FUNGSI PENCARIAN & SPOTIFY
         // ==========================================
         if (searchInput) {
             searchInput.addEventListener('input', function (e) {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
-                    if (searchInput.value.trim() !== '') {
-                        searchSongs();
-                    } else {
-                        searchResultsSection.classList.add('hidden');
-                        searchResultsSection.classList.remove('flex');
+                    if (searchInput.value.trim() !== '') searchSongs();
+                    else {
+                        searchResultsSection.classList.add('hidden'); searchResultsSection.classList.remove('flex');
                         if(!spotifyAccessToken) emptyState.classList.remove('hidden');
                     }
                 }, 800);
             });
-
             searchInput.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    clearTimeout(searchTimeout);
-                    if (searchInput.value.trim() !== '') searchSongs();
-                }
+                if (e.key === 'Enter') { clearTimeout(searchTimeout); if (searchInput.value.trim() !== '') searchSongs(); }
             });
         }
 
         if (searchBtn) {
             searchBtn.addEventListener('click', () => {
-                clearTimeout(searchTimeout);
-                if (searchInput.value.trim() !== '') searchSongs();
+                clearTimeout(searchTimeout); if (searchInput.value.trim() !== '') searchSongs();
             });
         }
 
-        // ==========================================
-        // FUNGSI PENCARIAN
-        // ==========================================
         async function searchSongs() {
             const query = searchInput.value.trim();
             if (!query) return;
 
             resultsGrid.innerHTML = '';
             emptyState.classList.add('hidden');
-            searchResultsSection.classList.remove('hidden');
-            searchResultsSection.classList.add('flex');
-            
-            loadingIndicator.classList.remove('hidden');
-            loadingIndicator.classList.add('flex');
+            searchResultsSection.classList.remove('hidden'); searchResultsSection.classList.add('flex');
+            loadingIndicator.classList.remove('hidden'); loadingIndicator.classList.add('flex');
 
             try {
                 const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&country=id&media=music&entity=song&limit=15`);
-                
-                if (!response.ok) throw new Error('Gagal menghubungi server pencarian');
                 const data = await response.json();
 
-                loadingIndicator.classList.add('hidden');
-                loadingIndicator.classList.remove('flex');
+                loadingIndicator.classList.add('hidden'); loadingIndicator.classList.remove('flex');
 
                 if (!data.results || data.results.length === 0) {
                     resultsGrid.innerHTML = `<div class="col-span-full text-center text-gray-500 py-8"><i class="fas fa-search-minus text-4xl mb-2"></i><br>Lagu "${query}" tidak ditemukan.</div>`;
@@ -689,13 +497,10 @@
                     const safeArtist = song.artistName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                     
                     card.onclick = () => openKaraoke(safeTitle, safeArtist, song.previewUrl, highResImage);
-
                     card.innerHTML = `
                         <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border border-slate-700/50">
                             <img src="${song.artworkUrl100}" alt="${song.trackName}" class="w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <i class="fas fa-play text-white text-xl"></i>
-                            </div>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play text-white text-xl"></i></div>
                         </div>
                         <div class="flex-1 min-w-0">
                             <h3 class="text-white font-bold truncate text-lg">${song.trackName}</h3>
@@ -704,24 +509,115 @@
                     `;
                     resultsGrid.appendChild(card);
                 });
-
             } catch (error) {
-                console.error("Error fetching songs:", error);
-                loadingIndicator.classList.add('hidden');
-                loadingIndicator.classList.remove('flex');
+                loadingIndicator.classList.add('hidden'); loadingIndicator.classList.remove('flex');
                 resultsGrid.innerHTML = `<div class="col-span-full text-center text-red-400 py-8"><i class="fas fa-wifi text-4xl mb-2"></i><br>Koneksi terputus. Gagal mencari lagu.</div>`;
             }
         }
 
+        function handleSpotifyAuth() { /* Simulasi Demo Spotify */
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token')) {
+                spotifyAccessToken = new URLSearchParams(hash.substring(1)).get('access_token');
+                window.history.pushState("", document.title, window.location.pathname + window.location.search);
+                showSpotifyConnected();
+            } else if (localStorage.getItem('spotify_fake_token')) {
+                spotifyAccessToken = localStorage.getItem('spotify_fake_token'); showSpotifyConnected();
+            } else { spotifyLoginBtn.classList.remove('hidden'); }
+        }
+
+        function loginSpotify() {
+            if (!SPOTIFY_CLIENT_ID) {
+                localStorage.setItem('spotify_fake_token', 'demo_mode_active'); handleSpotifyAuth(); return;
+            }
+            window.location.href = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=user-top-read`;
+        }
+
+        function showSpotifyConnected() {
+            spotifyLoginBtn.classList.add('hidden'); spotifyUserInfo.classList.remove('hidden');
+            spotifySection.classList.remove('hidden'); emptyState.classList.add('hidden'); fetchSpotifyTopTracks();
+        }
+
+        async function fetchSpotifyTopTracks() {
+            spotifyLoading.classList.remove('hidden'); spotifyLoading.classList.add('flex');
+            if (spotifyAccessToken === 'demo_mode_active') {
+                setTimeout(() => {
+                    const mockTracks = [
+                        { name: "Sempurna", artist: "Andra & The Backbone", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" },
+                        { name: "R U Broken 2", artist: "BMTH", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" } // Fallback image for demo
+                    ];
+                    renderSpotifyCards(mockTracks);
+                }, 1000); return;
+            }
+        }
+
+        function renderSpotifyCards(tracks) {
+            spotifyLoading.classList.add('hidden'); spotifyLoading.classList.remove('flex');
+            tracks.forEach(track => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel rounded-2xl p-4 flex items-center gap-4 hover:bg-slate-800 transition-all cursor-pointer group hover:-translate-y-1 relative overflow-hidden';
+                const safeTitle = track.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeArtist = track.artist.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                card.onclick = () => openKaraoke(safeTitle, safeArtist, "", track.img);
+                card.innerHTML = `
+                    <div class="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 z-10 border border-slate-700/50"><img src="${track.img}" class="w-full h-full object-cover"></div>
+                    <div class="flex-1 min-w-0 z-10"><h3 class="text-white font-bold truncate text-lg">${track.name}</h3><p class="text-green-400 text-sm truncate font-medium">${track.artist}</p></div>
+                `;
+                spotifyGrid.appendChild(card);
+            });
+        }
+
         // ==========================================
-        // FUNGSI KARAOKE NAVIGATION
+        // KARAOKE NAVIGATION & PLAYER MODE
         // ==========================================
+        function setPlayerMode(mode) {
+            currentMode = mode;
+            const ytContainer = document.getElementById('yt-container');
+            const itunesContainer = document.getElementById('itunes-container');
+            const btnYt = document.getElementById('mode-yt-btn');
+            const btnItunes = document.getElementById('mode-itunes-btn');
+
+            if (mode === 'youtube') {
+                audioPlayer.pause(); // Matikan audio preview iTunes
+                ytContainer.classList.remove('hidden');
+                itunesContainer.classList.add('hidden');
+                itunesContainer.classList.remove('flex');
+                
+                btnYt.classList.replace('bg-slate-800', 'bg-red-600');
+                btnYt.classList.replace('text-gray-400', 'text-white');
+                btnYt.classList.add('shadow-lg');
+                btnYt.classList.remove('border', 'border-slate-700');
+                
+                btnItunes.classList.remove('bg-purple-600', 'shadow-lg', 'text-white');
+                btnItunes.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
+            } else {
+                // Mode iTunes (Preview 30 detik)
+                document.getElementById('yt-iframe').src = document.getElementById('yt-iframe').src; // Pause YT video by reloading iframe
+                ytContainer.classList.add('hidden');
+                itunesContainer.classList.remove('hidden');
+                itunesContainer.classList.add('flex');
+                
+                btnItunes.classList.replace('bg-slate-800', 'bg-purple-600');
+                btnItunes.classList.replace('text-gray-400', 'text-white');
+                btnItunes.classList.add('shadow-lg');
+                btnItunes.classList.remove('border', 'border-slate-700');
+
+                btnYt.classList.remove('bg-red-600', 'shadow-lg', 'text-white');
+                btnYt.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
+            }
+            
+            // Perbarui warna neon Mic
+            if(isMicActive && audioContext) {
+                // Trigger a small dummy event to force color update
+                kArtwork.style.boxShadow = 'none';
+                ytContainer.style.boxShadow = 'none';
+            }
+        }
+
         function openKaraoke(title, artist, previewUrl, artworkUrl) {
             searchPage.classList.add('hidden');
             karaokePage.classList.remove('hidden');
             karaokePage.classList.add('flex');
-            bridgeLoading.classList.add('hidden');
-            bridgeLoading.classList.remove('flex');
 
             if (isMicActive) toggleMic();
 
@@ -732,17 +628,21 @@
             kArtist.textContent = artist;
             kArtwork.src = artworkUrl;
             
+            // Load iTunes Preview (berjaga-jaga jika user pindah mode)
             audioPlayer.src = previewUrl;
             audioPlayer.load();
-            
             lyricsContainer.innerHTML = '';
             kArtwork.classList.remove('spin');
             progressFill.style.width = '0%';
             currentTimeEl.textContent = '0:00';
+
+            // SETUP YOUTUBE KARAOKE (Pencarian Otomatis)
+            // Ini akan memanggil video hasil pencarian pertama untuk "Judul + Artis + Karaoke Instrumental"
+            const ytSearchQuery = `${title} ${artist} karaoke instrumental lirik`;
+            document.getElementById('yt-iframe').src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(ytSearchQuery)}`;
             
-            audioPlayer.play().catch(e => {
-                console.log("Autoplay ditahan browser, klik play manual ya.");
-            });
+            // Set Player Mode ke YouTube Secara Default
+            setPlayerMode('youtube');
 
             fetchLyricsWithAI(artist, title);
         }
@@ -750,6 +650,7 @@
         function closeKaraoke() {
             audioPlayer.pause();
             audioPlayer.src = "";
+            document.getElementById('yt-iframe').src = ""; // Matikan video
             kArtwork.classList.remove('spin');
             
             if (isMicActive) toggleMic(); 
@@ -762,65 +663,32 @@
         }
 
         // ==========================================
-        // KONTROL AUDIO PLAYER
+        // KONTROL AUDIO PLAYER (ITUNES)
         // ==========================================
-        audioPlayer.addEventListener('play', () => {
-            kArtwork.classList.add('spin');
-            playIcon.classList.replace('fa-play', 'fa-pause');
-            playIcon.classList.remove('ml-1');
-        });
-        
-        audioPlayer.addEventListener('pause', () => {
-            kArtwork.classList.remove('spin');
-            playIcon.classList.replace('fa-pause', 'fa-play');
-            playIcon.classList.add('ml-1');
-        });
-        
-        audioPlayer.addEventListener('ended', () => {
-            kArtwork.classList.remove('spin');
-            playIcon.classList.replace('fa-pause', 'fa-play');
-            playIcon.classList.add('ml-1');
-        });
-
+        audioPlayer.addEventListener('play', () => { kArtwork.classList.add('spin'); playIcon.classList.replace('fa-play', 'fa-pause'); });
+        audioPlayer.addEventListener('pause', () => { kArtwork.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); });
+        audioPlayer.addEventListener('ended', () => { kArtwork.classList.remove('spin'); playIcon.classList.replace('fa-pause', 'fa-play'); });
         audioPlayer.addEventListener('timeupdate', () => {
-            const current = audioPlayer.currentTime;
-            const duration = audioPlayer.duration || 30;
-            const currentMins = Math.floor(current / 60);
-            const currentSecs = Math.floor(current % 60).toString().padStart(2, '0');
-            currentTimeEl.textContent = `${currentMins}:${currentSecs}`;
-            const progressPercent = (current / duration) * 100;
-            progressFill.style.width = `${progressPercent}%`;
+            const current = audioPlayer.currentTime; const duration = audioPlayer.duration || 30;
+            currentTimeEl.textContent = `${Math.floor(current / 60)}:${Math.floor(current % 60).toString().padStart(2, '0')}`;
+            progressFill.style.width = `${(current / duration) * 100}%`;
         });
-
         audioPlayer.addEventListener('loadedmetadata', () => {
-            const duration = audioPlayer.duration;
-            if(duration && !isNaN(duration) && duration !== Infinity) {
-                const durationMins = Math.floor(duration / 60);
-                const durationSecs = Math.floor(duration % 60).toString().padStart(2, '0');
-                durationTimeEl.textContent = `${durationMins}:${durationSecs}`;
+            if(audioPlayer.duration && !isNaN(audioPlayer.duration) && audioPlayer.duration !== Infinity) {
+                durationTimeEl.textContent = `${Math.floor(audioPlayer.duration / 60)}:${Math.floor(audioPlayer.duration % 60).toString().padStart(2, '0')}`;
             }
         });
 
-        function togglePlayPause() {
-            if (audioPlayer.paused) audioPlayer.play();
-            else audioPlayer.pause();
-        }
-
+        function togglePlayPause() { if (audioPlayer.paused) audioPlayer.play(); else audioPlayer.pause(); }
         function seekAudio(e) {
             const rect = progressBarContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const width = rect.width;
-            const duration = audioPlayer.duration || 30;
-            audioPlayer.currentTime = (clickX / width) * duration;
+            audioPlayer.currentTime = ((e.clientX - rect.left) / rect.width) * (audioPlayer.duration || 30);
         }
 
         // ==========================================
         // FUNGSI LIRIK & IMMERSIVE MIC
         // ==========================================
-        
-        // Fungsi bantuan untuk menampilkan lirik di layar
         function displayLyrics(lyricsText) {
-            // Bersihkan teks kotor dari public API jika ada
             let cleanLyrics = lyricsText.replace(/Paroles de la chanson.*\n/ig, '');
             currentLyricsArray = cleanLyrics.split('\n').filter(line => line.trim() !== '');
             let formattedLyrics = '';
@@ -828,79 +696,46 @@
                 formattedLyrics += `<div id="lyric-${index}" class="lyric-line py-2 text-gray-400 hover:text-white cursor-pointer" onclick="manualSync(${index})">${line}</div>`;
             });
             lyricsContainer.innerHTML = formattedLyrics;
-            lyricsLoading.classList.add('hidden');
-            lyricsLoading.classList.remove('flex');
+            lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
         }
 
         async function fetchLyricsWithAI(artist, title) {
-            lyricsLoading.classList.remove('hidden');
-            lyricsLoading.classList.add('flex');
-            lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Mencari lirik di database publik...</p>';
+            lyricsLoading.classList.remove('hidden'); lyricsLoading.classList.add('flex');
+            lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Mencari lirik lagu...</p>';
 
-            // 1. JALUR GRATIS (TIDAK BUTUH API KEY)
-            // Web akan mencoba mencari lirik dari penyedia lirik publik terlebih dahulu
             try {
                 const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.lyrics) {
-                        displayLyrics(data.lyrics);
-                        return; // Selesai jika lirik ditemukan di jalur gratis
-                    }
+                    if (data.lyrics) { displayLyrics(data.lyrics); return; }
                 }
-            } catch (e) {
-                console.log("Jalur publik gagal, mencoba jalur AI...");
-            }
+            } catch (e) {}
 
-            // 2. JALUR AI (Butuh API Key Gemini)
-            // Jika jalur publik gagal, web akan meminta bantuan AI.
-            // Cek lokasi hosting: gunakan model 1.5-flash untuk GitHub, dan model preview untuk Canvas
             const isLocalPreview = typeof __firebase_config !== 'undefined';
             const modelName = isLocalPreview ? 'gemini-2.5-flash-preview-09-2025' : 'gemini-1.5-flash';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
             const prompt = `Berikan lirik lagu lengkap untuk lagu berjudul "${title}" yang dinyanyikan oleh "${artist}". Hanya berikan teks liriknya saja. Jangan tambahkan intro, outro, atau teks percakapan apapun. Jika kamu benar-benar tidak tahu liriknya, balas dengan "Maaf, lirik tidak ditemukan."`;
 
-            lyricsContainer.innerHTML = '<p class="text-gray-500 italic mt-20">Database publik kosong, mencoba menghubungi AI...</p>';
-
             for (let i = 0; i < 3; i++) {
                 try {
                     const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                     });
-                    
-                    if (!response.ok) {
-                        const errDetails = await response.text();
-                        console.error("Gemini API Error:", errDetails);
-                        throw new Error("Gagal memanggil AI");
-                    }
-                    
+                    if (!response.ok) throw new Error("API Error");
                     const data = await response.json();
                     let lyricsText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                    if (lyricsText && !lyricsText.includes("Maaf, lirik tidak ditemukan")) {
-                        displayLyrics(lyricsText);
-                    } else {
-                        lyricsContainer.innerHTML = '<p class="text-red-400 mt-20"><i class="fas fa-frown"></i> Maaf Ozza, lirik tidak ditemukan.</p>';
-                        lyricsLoading.classList.add('hidden');
-                        lyricsLoading.classList.remove('flex');
+                    if (lyricsText && !lyricsText.includes("Maaf, lirik tidak ditemukan")) displayLyrics(lyricsText);
+                    else {
+                        lyricsContainer.innerHTML = '<p class="text-red-400 mt-20">Maaf Ozza, lirik tidak ditemukan.</p>';
+                        lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
                     }
                     return; 
                 } catch (error) {
-                    console.error("Percobaan API gagal:", error);
                     if (i === 2) {
-                        lyricsContainer.innerHTML = `
-                            <p class="text-yellow-400 mt-16 px-6 text-sm leading-relaxed">
-                                <i class="fas fa-exclamation-triangle text-3xl mb-4"></i><br>
-                                Ups! Lirik lagu <b>${title}</b> tidak tersedia di database publik.<br><br>
-                                Koneksi ke AI juga sedang terganggu atau API Key yang dimasukkan tidak dapat diakses dari server. Coba muat ulang lagunya!
-                            </p>`;
-                        lyricsLoading.classList.add('hidden');
-                        lyricsLoading.classList.remove('flex');
-                    } else {
-                        await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
-                    }
+                        lyricsContainer.innerHTML = `<p class="text-yellow-400 mt-16 px-6 text-sm">Gagal memanggil AI untuk lirik. Coba lagi nanti.</p>`;
+                        lyricsLoading.classList.add('hidden'); lyricsLoading.classList.remove('flex');
+                    } else await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i)));
                 }
             }
         }
@@ -914,7 +749,8 @@
                 isMicActive = false;
                 micBtn.classList.replace('bg-purple-600', 'bg-slate-700');
                 micIcon.classList.replace('fa-microphone', 'fa-microphone-slash');
-                micText.textContent = 'Aktifkan Mic (Sync Lirik & Efek Suara)';
+                micText.textContent = 'Aktifkan Mic (Sinkron Efek Lampu Studio)';
+                document.getElementById('yt-container').style.boxShadow = '0 0 30px rgba(239,68,68,0.2)';
                 kArtwork.style.boxShadow = '0 0 30px rgba(168,85,247,0.4)'; 
 
                 if (recognition) recognition.stop();
@@ -928,13 +764,10 @@
                 isMicActive = true;
                 micBtn.classList.replace('bg-slate-700', 'bg-purple-600');
                 micIcon.classList.replace('fa-microphone-slash', 'fa-microphone');
-                micText.textContent = 'Mic Aktif (Bernyanyilah!)';
+                micText.textContent = 'Mic Aktif (Suara Terekam!)';
 
                 setupVisualizer(mediaStream);
-                setupSpeechRecognition();
-            } catch (err) {
-                alert("Gagal mengakses Mikrofon. Pastikan kamu memberi izin ya!");
-            }
+            } catch (err) { alert("Gagal mengakses Mikrofon. Pastikan kamu memberi izin ya!"); }
         }
 
         function setupVisualizer(stream) {
@@ -943,12 +776,8 @@
             const microphone = audioContext.createMediaStreamSource(stream);
             const javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
 
-            analyser.smoothingTimeConstant = 0.8;
-            analyser.fftSize = 1024;
-
-            microphone.connect(analyser);
-            analyser.connect(javascriptNode);
-            javascriptNode.connect(audioContext.destination);
+            analyser.smoothingTimeConstant = 0.8; analyser.fftSize = 1024;
+            microphone.connect(analyser); analyser.connect(javascriptNode); javascriptNode.connect(audioContext.destination);
 
             javascriptNode.onaudioprocess = function() {
                 if (!isMicActive) return;
@@ -960,46 +789,19 @@
                 const average = values / array.length;
                 
                 const glowBase = 30 + (average * 2);
-                kArtwork.style.boxShadow = `0 0 ${glowBase}px rgba(168,85,247, ${0.4 + (average/200)})`;
-            };
-        }
-
-        function setupSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-
-            recognition.onresult = (event) => {
-                if (!isMicActive) return;
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    transcript += event.results[i][0].transcript;
+                
+                // Terapkan efek neon sesuai mode pemutar
+                if (currentMode === 'youtube') {
+                    document.getElementById('yt-container').style.boxShadow = `0 0 ${glowBase}px rgba(239, 68, 68, ${0.4 + (average/200)})`;
+                    kArtwork.style.boxShadow = 'none';
+                } else {
+                    kArtwork.style.boxShadow = `0 0 ${glowBase}px rgba(168, 85, 247, ${0.4 + (average/200)})`;
+                    document.getElementById('yt-container').style.boxShadow = 'none';
                 }
-                syncLyricByText(transcript);
             };
-            recognition.onend = () => { if (isMicActive) try { recognition.start(); } catch(e){} };
-            recognition.start();
         }
 
-        function syncLyricByText(spokenText) {
-            if (!spokenText || currentLyricsArray.length === 0) return;
-            const spokenWords = spokenText.toLowerCase().split(' ').filter(w => w.length > 2);
-            if (spokenWords.length === 0) return;
-
-            let bestIdx = -1;
-            let maxScore = 0;
-
-            currentLyricsArray.forEach((line, index) => {
-                const lineWords = line.toLowerCase().split(' ');
-                let score = 0;
-                spokenWords.forEach(sw => { if (lineWords.includes(sw)) score++; });
-                if (score > maxScore) { maxScore = score; bestIdx = index; }
-            });
-            if (bestIdx !== -1 && maxScore > 0) manualSync(bestIdx);
-        }
-
+        // Fungsi manual sync lirik (fitur auto-scroll speech AI dinonaktifkan sementara karena bentrok dengan audio YouTube)
         function manualSync(index) {
             document.querySelectorAll('.lyric-line').forEach(el => {
                 el.classList.remove('lyric-active', 'text-white');
