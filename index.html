@@ -192,8 +192,13 @@
                 <!-- Error State YouTube -->
                 <div id="yt-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10 p-4 text-center">
                     <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
-                    <p class="text-sm text-gray-300 mb-4">Waduh, video instrumentalnya gagal dimuat.</p>
-                    <button onclick="retryYtSearch()" class="px-6 py-2 bg-red-600 hover:bg-red-500 rounded-full text-white text-sm font-bold transition-colors">Coba Cari Lagi</button>
+                    <p class="text-sm text-gray-300 mb-4">Sistem gagal mengambil video karena blokir dari YouTube.</p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button onclick="retryYtSearch()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-white text-sm font-bold transition-colors">Coba Lagi</button>
+                        <a id="yt-fallback-link" href="#" target="_blank" class="px-5 py-2 bg-red-600 hover:bg-red-500 rounded-full text-white text-sm font-bold transition-colors flex items-center gap-2">
+                            <i class="fab fa-youtube"></i> Buka di YouTube
+                        </a>
+                    </div>
                 </div>
                 <!-- Iframe YouTube Asli -->
                 <iframe id="yt-iframe" class="w-full h-full absolute inset-0 z-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -582,52 +587,42 @@
         }
 
         // ==========================================
-        // YOUTUBE SMART SEARCH & PLAYER MODE
+        // YOUTUBE SMART SCRAPING & PLAYER MODE
         // ==========================================
         
         async function findYoutubeVideo(query) {
-            // Kita pakai server pencari alternatif yang gratis & bebas blokir
-            const instances = [
-                'https://vid.puffyan.us',
-                'https://invidious.jing.rocks',
-                'https://inv.tux.pizza',
-                'https://invidious.flokinet.to'
-            ];
-
-            // 1. Coba cari pakai public API
-            for (let instance of instances) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 3500); 
-                    const res = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && data.length > 0) return data[0].videoId;
-                    }
-                } catch (e) {
-                    console.warn(`Melewati server sibuk...`);
+            // Metode terbaru: Scraping YouTube langsung lewat proxy untuk mencari ID Video
+            const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+            
+            // 1. Coba Proxy Pertama (AllOrigins)
+            try {
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`;
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    const html = data.contents;
+                    // Mencari pola ID Video di dalam kode sumber YouTube
+                    const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+                    if (match) return match[1];
                 }
+            } catch (e) {
+                console.warn("Proxy 1 (AllOrigins) diblokir.");
             }
 
-            // 2. Jika semua API mati, AI Gemini langsung turun tangan!
-            if (apiKey) {
-                try {
-                    console.log("Menggunakan AI Gemini untuk mencari Video YouTube...");
-                    const prompt = `Tolong cari 1 ID Video YouTube yang paling tepat untuk pencarian ini: "${query}". Kembalikan HANYA ID Video-nya saja (teks 11 karakter unik, contoh: dQw4w9WgXcQ). Jangan beri teks, titik, tanda kutip, atau spasi tambahan.`;
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-                    const response = await fetch(url, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-                    const match = text.match(/[a-zA-Z0-9_-]{11}/);
-                    if (match) return match[0];
-                } catch(e) { console.error("AI gagal mencari video", e); }
+            // 2. Coba Proxy Kedua (CodeTabs) sebagai cadangan
+            try {
+                const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(searchUrl)}`;
+                const res = await fetch(proxyUrl);
+                if (res.ok) {
+                    const html = await res.text();
+                    const match = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+                    if (match) return match[1];
+                }
+            } catch (e) {
+                console.warn("Proxy 2 (CodeTabs) diblokir.");
             }
 
+            // Jika semua gagal, kembalikan null agar tombol fallback ("Buka di YouTube") muncul
             return null;
         }
 
@@ -636,6 +631,7 @@
             const ytIframe = document.getElementById('yt-iframe');
             const ytLoading = document.getElementById('yt-loading');
             const ytError = document.getElementById('yt-error');
+            const ytFallbackLink = document.getElementById('yt-fallback-link'); // Tombol merah ke YouTube
 
             ytIframe.src = ""; // Bersihkan video lama
             ytLoading.classList.remove('hidden'); ytLoading.classList.add('flex');
@@ -646,10 +642,11 @@
             ytLoading.classList.add('hidden'); ytLoading.classList.remove('flex');
 
             if (videoId) {
-                // Tampilkan video jika dapat!
+                // Tampilkan video jika dapat ID-nya!
                 ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
             } else {
-                // Tampilkan pesan error jika mentok
+                // Tampilkan pesan error dan siapkan link untuk buka di tab baru jika mentok
+                ytFallbackLink.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
                 ytError.classList.remove('hidden'); ytError.classList.add('flex');
             }
         }
