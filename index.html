@@ -251,8 +251,12 @@
         // --- SETUP FIREBASE ---
         let firebaseConfig;
         try {
-            // Ini untuk membuat web berjalan di dalam mode preview otomatis
-            firebaseConfig = JSON.parse(__firebase_config);
+            // Ini untuk membuat web berjalan di dalam mode preview otomatis di Canvas
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                throw new Error("Local environment");
+            }
         } catch(e) {
             // KONFIGURASI FIREBASE ASLI MILIK OZZA (karaokemen)
             firebaseConfig = {
