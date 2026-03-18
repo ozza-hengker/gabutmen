@@ -164,20 +164,28 @@
             <!-- Bottom Controls (Nempel di bawah, z-index paling tinggi) -->
             <div class="w-full shrink-0 px-6 md:px-12 pb-10 pt-6 bg-gradient-to-t from-[#0f172a] to-transparent relative z-[80]">
                 
-                <!-- Mic Sync Control -->
-                <div class="w-full flex justify-center mb-6">
+                <!-- Mic Sync Control & Vocal Remover -->
+                <div class="w-full flex flex-wrap justify-center gap-3 mb-6">
                     <button id="p-mic-btn" onclick="toggleMic()" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-2.5 rounded-full font-semibold transition-all flex items-center gap-3 shadow-lg backdrop-blur-md group cursor-pointer">
                         <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-pink-500 transition-colors" id="p-mic-icon-bg">
                             <i class="fas fa-microphone-slash text-sm" id="p-mic-icon"></i>
                         </div>
-                        <span id="p-mic-text" class="text-sm">Mic Sync Aktifkan!</span>
+                        <span id="p-mic-text" class="text-sm">Mic Sync</span>
+                    </button>
+
+                    <!-- Vocal Remover Button (Hanya Muncul saat Putar Lagu Asli) -->
+                    <button id="vocal-remove-btn" onclick="toggleVocalRemover()" class="hidden bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-2.5 rounded-full font-semibold transition-all items-center gap-3 shadow-lg backdrop-blur-md group cursor-pointer">
+                        <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center group-hover:bg-pink-500 transition-colors" id="vocal-remove-icon-bg">
+                            <i class="fas fa-user-alt text-sm" id="vocal-remove-icon"></i>
+                        </div>
+                        <span id="vocal-remove-text" class="text-sm">Suara Penyanyi</span>
                     </button>
                 </div>
                 
                 <!-- Audio Progress Bar & Play Button -->
                 <div id="p-audio-controls" class="flex items-center gap-4 w-full max-w-3xl mx-auto">
-                    <!-- Audio Player HTML5 untuk mode Fallback (Lagu Asli) -->
-                    <audio id="p-audio-element" class="hidden"><source src="" type="audio/mpeg"></audio>
+                    <!-- Audio Player HTML5 WAJIB CrossOrigin untuk Web Audio API Effect -->
+                    <audio id="p-audio-element" class="hidden" crossorigin="anonymous"><source src="" type="audio/mpeg"></audio>
 
                     <span id="p-time-current" class="text-sm font-medium text-gray-300 w-12 text-right">0:00</span>
                     <div class="flex-1 h-4 bg-white/10 rounded-full cursor-pointer relative shadow-inner overflow-hidden group" onclick="seekAudio(event)" id="p-progress-bg">
@@ -248,6 +256,11 @@
         let isSyncedLyrics = false;
         let currentActiveLyricIndex = -1;
 
+        // Vocal Remover States
+        let isVocalRemoved = false;
+        let vocalRemoverSetup = false;
+        let audioCtx, sourceNode, normalGain, karaokeGain;
+
         window.openKaraoke = openKaraoke;
         window.closeKaraoke = closeKaraoke;
         window.togglePlayPause = togglePlayPause;
@@ -258,6 +271,7 @@
         window.toggleFavoriteCurrentSong = toggleFavoriteCurrentSong;
         window.removeFavorite = removeFavorite;
         window.clearSearch = clearSearch;
+        window.toggleVocalRemover = toggleVocalRemover;
 
         window.onYouTubeIframeAPIReady = function() { console.log("YouTube API Ready"); };
 
@@ -532,6 +546,74 @@
         }
 
         // ==========================================
+        // REAL-TIME VOCAL REMOVER (PHASE CANCELLATION)
+        // ==========================================
+        function setupVocalRemoverNode() {
+            if (vocalRemoverSetup) return;
+            const audioEl = document.getElementById('p-audio-element');
+            // Init Context
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            sourceNode = audioCtx.createMediaElementSource(audioEl);
+
+            normalGain = audioCtx.createGain();
+            karaokeGain = audioCtx.createGain();
+            normalGain.gain.value = 1;
+            karaokeGain.gain.value = 0; // Karaoke effect mati awalnya
+
+            // Membuat efek Phase Cancellation (Menghapus Center Audio = Vokal)
+            const processor = audioCtx.createScriptProcessor(4096, 2, 2);
+            processor.onaudioprocess = function(e) {
+                const inputL = e.inputBuffer.getChannelData(0);
+                const inputR = e.inputBuffer.getChannelData(1);
+                const outputL = e.outputBuffer.getChannelData(0);
+                const outputR = e.outputBuffer.getChannelData(1);
+
+                for (let i = 0; i < inputL.length; i++) {
+                    const centerRemoved = inputL[i] - inputR[i]; // Cancels matching center frequencies
+                    outputL[i] = centerRemoved;
+                    outputR[i] = centerRemoved;
+                }
+            };
+            window.audioProcessorNode = processor; // Cegah Garbage Collection
+
+            sourceNode.connect(normalGain);
+            sourceNode.connect(processor);
+            processor.connect(karaokeGain);
+
+            normalGain.connect(audioCtx.destination);
+            karaokeGain.connect(audioCtx.destination);
+
+            vocalRemoverSetup = true;
+        }
+
+        function toggleVocalRemover() {
+            if (activeEngine !== 'itunes') return; // Hanya aktif di mode lagu asli
+            
+            // Resume Audio Context jika ke-suspend oleh browser
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+
+            isVocalRemoved = !isVocalRemoved;
+            const btnText = document.getElementById('vocal-remove-text');
+            const btnIconBg = document.getElementById('vocal-remove-icon-bg');
+            const btn = document.getElementById('vocal-remove-btn');
+
+            if(isVocalRemoved) {
+                normalGain.gain.value = 0;
+                karaokeGain.gain.value = 1;
+                btnText.textContent = "Vokal Dihilangkan";
+                btnIconBg.classList.replace('bg-slate-700', 'bg-pink-500');
+                btn.classList.add('border-pink-500', 'shadow-[0_0_15px_rgba(236,72,153,0.5)]');
+            } else {
+                normalGain.gain.value = 1;
+                karaokeGain.gain.value = 0;
+                btnText.textContent = "Suara Penyanyi";
+                btnIconBg.classList.replace('bg-pink-500', 'bg-slate-700');
+                btn.classList.remove('border-pink-500', 'shadow-[0_0_15px_rgba(236,72,153,0.5)]');
+            }
+        }
+
+
+        // ==========================================
         // EVENT LISTENERS AUDIO (ITUNES FALLBACK)
         // ==========================================
         const audioEl = document.getElementById('p-audio-element');
@@ -617,12 +699,22 @@
         async function openKaraoke(title, artist, previewUrl, artworkUrl) {
             const playerScreen = document.getElementById('player-screen');
             const playIcon = document.getElementById('p-play-icon');
+            const vocalBtn = document.getElementById('vocal-remove-btn');
+            
             document.body.style.overflow = 'hidden';
 
             playerScreen.classList.remove('translate-y-full');
             playerScreen.classList.add('translate-y-0');
 
             if (isMicActive) toggleMic();
+
+            // Reset Vocal Remover Button State
+            vocalBtn.classList.add('hidden');
+            vocalBtn.classList.remove('flex');
+            isVocalRemoved = false;
+            document.getElementById('vocal-remove-text').textContent = "Suara Penyanyi";
+            document.getElementById('vocal-remove-icon-bg').classList.replace('bg-pink-500', 'bg-slate-700');
+            vocalBtn.classList.remove('border-pink-500', 'shadow-[0_0_15px_rgba(236,72,153,0.5)]');
 
             currentPlayingSong = { title, artist, previewUrl, artworkUrl };
             updateFavoriteButtonUI();
@@ -679,6 +771,15 @@
             const audioEl = document.getElementById('p-audio-element');
             audioEl.src = previewUrl;
             audioEl.load();
+            
+            // Inisialisasi Sistem Penghilang Vokal (Tapi jangan dinyalakan dulu efeknya)
+            setupVocalRemoverNode();
+            
+            // Tampilkan tombol "Penghilang Vokal"
+            const vocalBtn = document.getElementById('vocal-remove-btn');
+            vocalBtn.classList.remove('hidden');
+            vocalBtn.classList.add('flex');
+
             executeCountdownAndPlay();
         }
 
@@ -711,6 +812,9 @@
                     else if (state == YT.PlayerState.PAUSED || state == YT.PlayerState.CUED || state == YT.PlayerState.UNSTARTED) ytPlayer.playVideo();
                 } else if (activeEngine === 'itunes') {
                     const audioEl = document.getElementById('p-audio-element');
+                    // Resume audio context saat memutar kembali untuk Web Audio API
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                    
                     if (audioEl.paused) audioEl.play();
                     else audioEl.pause();
                 }
