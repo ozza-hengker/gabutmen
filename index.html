@@ -184,7 +184,19 @@
 
             <!-- PLAYER 1: YOUTUBE FULL KARAOKE (BARU) -->
             <div id="yt-container" class="w-full aspect-video rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.2)] mb-8 border-2 border-slate-700 bg-black relative">
-                <iframe id="yt-iframe" class="w-full h-full absolute inset-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                <!-- Loading State YouTube -->
+                <div id="yt-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10">
+                    <i class="fas fa-circle-notch fa-spin text-4xl text-red-500 mb-4"></i>
+                    <p class="text-sm text-gray-300 font-medium tracking-wide">Mencari Video Karaoke Instrumental...</p>
+                </div>
+                <!-- Error State YouTube -->
+                <div id="yt-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-10 p-4 text-center">
+                    <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
+                    <p class="text-sm text-gray-300 mb-4">Waduh, video instrumentalnya gagal dimuat.</p>
+                    <button onclick="retryYtSearch()" class="px-6 py-2 bg-red-600 hover:bg-red-500 rounded-full text-white text-sm font-bold transition-colors">Coba Cari Lagi</button>
+                </div>
+                <!-- Iframe YouTube Asli -->
+                <iframe id="yt-iframe" class="w-full h-full absolute inset-0 z-0" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
 
             <!-- PLAYER 2: ITUNES PREVIEW (LAMA) -->
@@ -322,7 +334,7 @@
         const spotifyLoading = document.getElementById('spotify-loading');
 
         // Mode Player
-        let currentMode = 'youtube'; // Default ke YouTube Full Karaoke
+        let currentMode = 'youtube'; 
 
         let isMicActive = false;
         let recognition = null;
@@ -332,6 +344,7 @@
         let searchTimeout = null;
         let spotifyAccessToken = null;
         let currentPlayingSong = null;
+        let lastYtQuery = ""; // Menyimpan judul lagu untuk di-retry
 
         window.loginSpotify = loginSpotify;
         window.closeKaraoke = closeKaraoke;
@@ -340,6 +353,7 @@
         window.toggleMic = toggleMic;
         window.manualSync = manualSync;
         window.setPlayerMode = setPlayerMode;
+        window.retryYtSearch = () => { if(lastYtQuery) loadYtVideo(lastYtQuery); };
 
         // ==========================================
         // INITIALIZATION
@@ -515,7 +529,7 @@
             }
         }
 
-        function handleSpotifyAuth() { /* Simulasi Demo Spotify */
+        function handleSpotifyAuth() {
             const hash = window.location.hash;
             if (hash && hash.includes('access_token')) {
                 spotifyAccessToken = new URLSearchParams(hash.substring(1)).get('access_token');
@@ -544,7 +558,7 @@
                 setTimeout(() => {
                     const mockTracks = [
                         { name: "Sempurna", artist: "Andra & The Backbone", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" },
-                        { name: "R U Broken 2", artist: "BMTH", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" } // Fallback image for demo
+                        { name: "R U Broken 2", artist: "BMTH", img: "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/64/a3/3d/64a33dd9-2708-5ea1-e8d1-75463f274a2b/0000000000000.jpg/600x600bb.jpg" }
                     ];
                     renderSpotifyCards(mockTracks);
                 }, 1000); return;
@@ -568,8 +582,78 @@
         }
 
         // ==========================================
-        // KARAOKE NAVIGATION & PLAYER MODE
+        // YOUTUBE SMART SEARCH & PLAYER MODE
         // ==========================================
+        
+        async function findYoutubeVideo(query) {
+            // Kita pakai server pencari alternatif yang gratis & bebas blokir
+            const instances = [
+                'https://vid.puffyan.us',
+                'https://invidious.jing.rocks',
+                'https://inv.tux.pizza',
+                'https://invidious.flokinet.to'
+            ];
+
+            // 1. Coba cari pakai public API
+            for (let instance of instances) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3500); 
+                    const res = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.length > 0) return data[0].videoId;
+                    }
+                } catch (e) {
+                    console.warn(`Melewati server sibuk...`);
+                }
+            }
+
+            // 2. Jika semua API mati, AI Gemini langsung turun tangan!
+            if (apiKey) {
+                try {
+                    console.log("Menggunakan AI Gemini untuk mencari Video YouTube...");
+                    const prompt = `Tolong cari 1 ID Video YouTube yang paling tepat untuk pencarian ini: "${query}". Kembalikan HANYA ID Video-nya saja (teks 11 karakter unik, contoh: dQw4w9WgXcQ). Jangan beri teks, titik, tanda kutip, atau spasi tambahan.`;
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+                    const response = await fetch(url, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await response.json();
+                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                    const match = text.match(/[a-zA-Z0-9_-]{11}/);
+                    if (match) return match[0];
+                } catch(e) { console.error("AI gagal mencari video", e); }
+            }
+
+            return null;
+        }
+
+        async function loadYtVideo(query) {
+            lastYtQuery = query;
+            const ytIframe = document.getElementById('yt-iframe');
+            const ytLoading = document.getElementById('yt-loading');
+            const ytError = document.getElementById('yt-error');
+
+            ytIframe.src = ""; // Bersihkan video lama
+            ytLoading.classList.remove('hidden'); ytLoading.classList.add('flex');
+            ytError.classList.add('hidden'); ytError.classList.remove('flex');
+
+            const videoId = await findYoutubeVideo(query);
+
+            ytLoading.classList.add('hidden'); ytLoading.classList.remove('flex');
+
+            if (videoId) {
+                // Tampilkan video jika dapat!
+                ytIframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+            } else {
+                // Tampilkan pesan error jika mentok
+                ytError.classList.remove('hidden'); ytError.classList.add('flex');
+            }
+        }
+
         function setPlayerMode(mode) {
             currentMode = mode;
             const ytContainer = document.getElementById('yt-container');
@@ -591,8 +675,8 @@
                 btnItunes.classList.remove('bg-purple-600', 'shadow-lg', 'text-white');
                 btnItunes.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
             } else {
-                // Mode iTunes (Preview 30 detik)
-                document.getElementById('yt-iframe').src = document.getElementById('yt-iframe').src; // Pause YT video by reloading iframe
+                // Mode iTunes
+                document.getElementById('yt-iframe').src = document.getElementById('yt-iframe').src; // Pause YT video
                 ytContainer.classList.add('hidden');
                 itunesContainer.classList.remove('hidden');
                 itunesContainer.classList.add('flex');
@@ -606,9 +690,7 @@
                 btnYt.classList.add('bg-slate-800', 'text-gray-400', 'border', 'border-slate-700');
             }
             
-            // Perbarui warna neon Mic
             if(isMicActive && audioContext) {
-                // Trigger a small dummy event to force color update
                 kArtwork.style.boxShadow = 'none';
                 ytContainer.style.boxShadow = 'none';
             }
@@ -628,7 +710,6 @@
             kArtist.textContent = artist;
             kArtwork.src = artworkUrl;
             
-            // Load iTunes Preview (berjaga-jaga jika user pindah mode)
             audioPlayer.src = previewUrl;
             audioPlayer.load();
             lyricsContainer.innerHTML = '';
@@ -636,21 +717,18 @@
             progressFill.style.width = '0%';
             currentTimeEl.textContent = '0:00';
 
-            // SETUP YOUTUBE KARAOKE (Pencarian Otomatis)
-            // Ini akan memanggil video hasil pencarian pertama untuk "Judul + Artis + Karaoke Instrumental"
-            const ytSearchQuery = `${title} ${artist} karaoke instrumental lirik`;
-            document.getElementById('yt-iframe').src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(ytSearchQuery)}`;
+            // SETUP YOUTUBE KARAOKE (Pencarian Otomatis Spesifik)
+            const ytSearchQuery = `${title} ${artist} karaoke instrumental`;
+            loadYtVideo(ytSearchQuery);
             
-            // Set Player Mode ke YouTube Secara Default
             setPlayerMode('youtube');
-
             fetchLyricsWithAI(artist, title);
         }
 
         function closeKaraoke() {
             audioPlayer.pause();
             audioPlayer.src = "";
-            document.getElementById('yt-iframe').src = ""; // Matikan video
+            document.getElementById('yt-iframe').src = ""; 
             kArtwork.classList.remove('spin');
             
             if (isMicActive) toggleMic(); 
@@ -790,7 +868,6 @@
                 
                 const glowBase = 30 + (average * 2);
                 
-                // Terapkan efek neon sesuai mode pemutar
                 if (currentMode === 'youtube') {
                     document.getElementById('yt-container').style.boxShadow = `0 0 ${glowBase}px rgba(239, 68, 68, ${0.4 + (average/200)})`;
                     kArtwork.style.boxShadow = 'none';
@@ -801,7 +878,6 @@
             };
         }
 
-        // Fungsi manual sync lirik (fitur auto-scroll speech AI dinonaktifkan sementara karena bentrok dengan audio YouTube)
         function manualSync(index) {
             document.querySelectorAll('.lyric-line').forEach(el => {
                 el.classList.remove('lyric-active', 'text-white');
